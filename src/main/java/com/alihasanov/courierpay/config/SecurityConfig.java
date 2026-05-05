@@ -94,4 +94,5 @@ public class SecurityConfig {
     private String authority(String role) {
         return "ROLE_" + role;
     }
+
 }
