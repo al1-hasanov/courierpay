@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: courierpay
+  datasource:
+    url: jdbc:postgresql://localhost:5432/courierpay
+    username: courierpay
+    password: courierpay
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  liquibase:
+    enabled: true
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: courierpay-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.alihasanov.courierpay.*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    listener:
+      missing-topics-fatal: false
+
+server:
+  port: 8080
+
+app:
+  security:
+    jwt-secret: "VGhlIGhheSBmYWN0b3J5IHJlYWxpemVkIHRoYXQgaXQgd2FudGVkIHRvIGJlIGEgY2F0LCBhbmQgZ3JldyB0ZW50YWNsZXMgb2Ygd2lzZG9tIGluIG9yZGVyIHRvIG92ZXJ0aHJvdyB0aGUgc2VuYXRlLg=="
+    jwt-expiration-minutes: 120
+  kafka:
+    topics:
+      earning-created: earning.created
+      payout-requested: payout.requested
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
