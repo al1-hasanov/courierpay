@@ -17,6 +17,9 @@ import java.time.Instant;
 import java.util.List;
 
 import static com.alihasanov.courierpay.dto.PayoutDtos.*;
+import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.ONLY_REQUESTED_PAYOUTS_CAN_BE_APPROVED;
+import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.PAYOUT_NOT_FOUND;
+import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.REQUESTED_PAYOUT_EXCEEDS_AVAILABLE_BALANCE;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +38,7 @@ public class PayoutService {
         var courier = courierService.get(request.courierId());
         var balance = balanceService.getByCourierId(courier.getId());
         if (balance.getAvailableAmount().compareTo(request.amount()) < 0) {
-            throw new BusinessException("Requested payout exceeds available balance");
+            throw new BusinessException(REQUESTED_PAYOUT_EXCEEDS_AVAILABLE_BALANCE);
         }
         var payout = payoutRepository.save(Payout.builder()
                 .courier(courier)
@@ -50,7 +53,7 @@ public class PayoutService {
     public PayoutResponse approve(Long payoutId) {
         var payout = get(payoutId);
         if (payout.getStatus() != PayoutStatus.REQUESTED) {
-            throw new BusinessException("Only requested payouts can be approved");
+            throw new BusinessException(ONLY_REQUESTED_PAYOUTS_CAN_BE_APPROVED);
         }
         balanceService.debit(payout.getCourier().getId(), payout.getAmount());
         transactionService.record(payout.getCourier(), TransactionType.PAYOUT_DEBIT, payout.getAmount(), payout.getId(), "Payout completed internally");
@@ -68,6 +71,6 @@ public class PayoutService {
 
     public List<PayoutResponse> findAll() { return payoutRepository.findAll().stream().map(this::toResponse).toList(); }
 
-    private Payout get(Long id) { return payoutRepository.findById(id).orElseThrow(() -> new NotFoundException("Payout not found")); }
+    private Payout get(Long id) { return payoutRepository.findById(id).orElseThrow(() -> new NotFoundException(PAYOUT_NOT_FOUND)); }
     private PayoutResponse toResponse(Payout p) { return new PayoutResponse(p.getId(), p.getCourier().getId(), p.getAmount(), p.getStatus()); }
 }

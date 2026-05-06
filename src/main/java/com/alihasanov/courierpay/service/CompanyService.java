@@ -1,14 +1,14 @@
 package com.alihasanov.courierpay.service;
 
+import com.alihasanov.courierpay.entity.Company;
 import com.alihasanov.courierpay.exception.NotFoundException;
 import com.alihasanov.courierpay.repository.CompanyRepository;
-import com.alihasanov.courierpay.entity.Company;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 import static com.alihasanov.courierpay.dto.CompanyDtos.*;
+import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.COMPANY_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +28,7 @@ public class CompanyService {
     }
 
     public Company get(Long id) {
-        return companyRepository.findById(id).orElseThrow(() -> new NotFoundException("Company not found"));
+        return companyRepository.findById(id).orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
     }
 
     private CompanyResponse toResponse(Company c) { return new CompanyResponse(c.getId(), c.getName(), c.getCommissionRate()); }

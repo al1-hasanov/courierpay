@@ -12,7 +12,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class ApplicationException extends RuntimeException {
 
-    static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     private final ErrorResponse errorResponse;
     private final Map<String, Object> messageArguments;

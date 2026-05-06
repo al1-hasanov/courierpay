@@ -6,6 +6,7 @@ public enum CourierPayErrorResponse implements ErrorResponse {
 
     BUSINESS_ERROR("BUSINESS_ERROR", HttpStatus.BAD_REQUEST, "{message}"),
     NOT_FOUND("NOT_FOUND", HttpStatus.NOT_FOUND, "{message}"),
+    INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", HttpStatus.INTERNAL_SERVER_ERROR, "{message}"),
 
     EMAIL_ALREADY_REGISTERED("EMAIL_ALREADY_REGISTERED", HttpStatus.BAD_REQUEST, "Email already registered"),
     BALANCE_NOT_FOUND("BALANCE_NOT_FOUND", HttpStatus.NOT_FOUND, "Balance not found"),
@@ -17,7 +18,8 @@ public enum CourierPayErrorResponse implements ErrorResponse {
     EARNING_NOT_FOUND("EARNING_NOT_FOUND", HttpStatus.NOT_FOUND, "Earning not found"),
     REQUESTED_PAYOUT_EXCEEDS_AVAILABLE_BALANCE("REQUESTED_PAYOUT_EXCEEDS_AVAILABLE_BALANCE", HttpStatus.BAD_REQUEST, "Requested payout exceeds available balance"),
     ONLY_REQUESTED_PAYOUTS_CAN_BE_APPROVED("ONLY_REQUESTED_PAYOUTS_CAN_BE_APPROVED", HttpStatus.BAD_REQUEST, "Only requested payouts can be approved"),
-    PAYOUT_NOT_FOUND("PAYOUT_NOT_FOUND", HttpStatus.NOT_FOUND, "Payout not found");
+    PAYOUT_NOT_FOUND("PAYOUT_NOT_FOUND", HttpStatus.NOT_FOUND, "Payout not found"),
+    EXPORT_TRANSACTIONS_FAILED("EXPORT_TRANSACTIONS_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, "Could not export transactions");
 
     private final String key;
     private final HttpStatus httpStatus;

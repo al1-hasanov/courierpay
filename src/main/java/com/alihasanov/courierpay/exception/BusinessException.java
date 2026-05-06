@@ -4,6 +4,8 @@ import java.util.Map;
 
 public class BusinessException extends ApplicationException {
 
+    private static final long serialVersionUID = 1L;
+
     public BusinessException(String message) {
         super(CourierPayErrorResponse.BUSINESS_ERROR, Map.of("message", message));
     }

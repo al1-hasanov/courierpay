@@ -1,11 +1,13 @@
 package com.alihasanov.courierpay.service;
 
+import com.alihasanov.courierpay.exception.InternalServerException;
 import com.alihasanov.courierpay.repository.TransactionRepository;
+import java.io.ByteArrayOutputStream;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
+import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.EXPORT_TRANSACTIONS_FAILED;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +36,7 @@ public class ReportService {
             workbook.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            throw new IllegalStateException("Could not export transactions", e);
+            throw new InternalServerException(EXPORT_TRANSACTIONS_FAILED, e);
         }
     }
 }

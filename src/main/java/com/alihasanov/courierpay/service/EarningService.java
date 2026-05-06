@@ -22,6 +22,8 @@ import java.time.Instant;
 import java.util.List;
 
 import static com.alihasanov.courierpay.dto.EarningDtos.*;
+import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.DUPLICATE_EARNING_IDEMPOTENCY_KEY;
+import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.EARNING_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +40,7 @@ public class EarningService {
     @Transactional
     public EarningResponse create(CreateEarningRequest request) {
         if (earningRepository.existsByIdempotencyKey(request.idempotencyKey())) {
-            throw new BusinessException("Duplicate earning idempotency key");
+            throw new BusinessException(DUPLICATE_EARNING_IDEMPOTENCY_KEY);
         }
         var courier = courierService.get(request.courierId());
         BigDecimal commissionAmount = request.grossAmount()
@@ -62,7 +64,7 @@ public class EarningService {
 
     @Transactional
     public void process(Long earningId) {
-        var earning = earningRepository.findById(earningId).orElseThrow(() -> new NotFoundException("Earning not found"));
+        var earning = earningRepository.findById(earningId).orElseThrow(() -> new NotFoundException(EARNING_NOT_FOUND));
         if (earning.getStatus() != EarningStatus.PENDING) return;
         balanceService.credit(earning.getCourier().getId(), earning.getNetAmount());
         transactionService.record(earning.getCourier(), TransactionType.EARNING_CREDIT, earning.getNetAmount(), earning.getId(), "Courier net earning credited");
