@@ -1,20 +1,17 @@
 package com.alihasanov.courierpay.service;
 
-import com.alihasanov.courierpay.repository.EarningRepository;
-import com.alihasanov.courierpay.exception.BusinessException;
-import com.alihasanov.courierpay.enums.EarningStatus;
-import com.alihasanov.courierpay.exception.NotFoundException;
-import com.alihasanov.courierpay.enums.TransactionType;
 import com.alihasanov.courierpay.entity.Earning;
+import com.alihasanov.courierpay.enums.EarningStatus;
+import com.alihasanov.courierpay.enums.TransactionType;
 import com.alihasanov.courierpay.event.EarningCreatedEvent;
+import com.alihasanov.courierpay.exception.BusinessException;
+import com.alihasanov.courierpay.exception.NotFoundException;
+import com.alihasanov.courierpay.repository.EarningRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -71,19 +68,6 @@ public class EarningService {
         transactionService.record(earning.getCourier(), TransactionType.COMMISSION_DEBIT, earning.getCommissionAmount(), earning.getId(), "Company commission calculated");
         earning.setStatus(EarningStatus.PROCESSED);
         earning.setProcessedAt(Instant.now());
-    }
-
-    @KafkaListener(topics = "${app.kafka.topics.earning-created}", groupId = "courierpay-earning-processor")
-    public void onEarningCreated(EarningCreatedEvent event) {
-        process(event.earningId());
-    }
-
-    @Transactional
-    @Scheduled(cron = "0 */10 * * * *")
-    @SchedulerLock(name = "processPendingEarnings", lockAtMostFor = "9m", lockAtLeastFor = "30s")
-    public void processPendingEarningsJob() {
-        earningRepository.findTop100ByStatusOrderByCreatedAtAsc(EarningStatus.PENDING)
-                .forEach(e -> process(e.getId()));
     }
 
     public List<EarningResponse> findAll() {
