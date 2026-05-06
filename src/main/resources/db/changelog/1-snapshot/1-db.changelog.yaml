@@ -1,115 +1,119 @@
 databaseChangeLog:
-    - changeSet:
-          id: 001-create-core-schema
-          author: ali
-          changes:
-              - createTable:
-                    tableName: users
-                    columns:
-                        - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
-                        - column: { name: email, type: VARCHAR(180), constraints: { nullable: false, unique: true } }
-                        - column: { name: password_hash, type: VARCHAR(255), constraints: { nullable: false } }
-                        - column: { name: full_name, type: VARCHAR(180), constraints: { nullable: false } }
-                        - column: { name: role, type: VARCHAR(40), constraints: { nullable: false } }
-                        - column: { name: status, type: VARCHAR(40), constraints: { nullable: false } }
-                        - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
-              - createTable:
-                    tableName: companies
-                    columns:
-                        - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
-                        - column: { name: name, type: VARCHAR(180), constraints: { nullable: false } }
-                        - column: { name: commission_rate, type: DECIMAL(5,2), constraints: { nullable: false } }
-                        - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
-              - createTable:
-                    tableName: couriers
-                    columns:
-                        - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
-                        - column: { name: user_id, type: BIGINT, constraints: { nullable: false, unique: true } }
-                        - column: { name: company_id, type: BIGINT, constraints: { nullable: false } }
-                        - column: { name: phone_number, type: VARCHAR(40) }
-                        - column: { name: active, type: BOOLEAN, defaultValueBoolean: true }
-                        - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
-              - addForeignKeyConstraint:
-                    baseTableName: couriers
-                    baseColumnNames: user_id
-                    referencedTableName: users
-                    referencedColumnNames: id
-                    constraintName: fk_couriers_users
-              - addForeignKeyConstraint:
-                    baseTableName: couriers
-                    baseColumnNames: company_id
-                    referencedTableName: companies
-                    referencedColumnNames: id
-                    constraintName: fk_couriers_companies
-              - createTable:
-                    tableName: balances
-                    columns:
-                        - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
-                        - column: { name: courier_id, type: BIGINT, constraints: { nullable: false, unique: true } }
-                        - column: { name: available_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
-                        - column: { name: reserved_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
-                        - column: { name: version, type: BIGINT, constraints: { nullable: false } }
-                        - column: { name: updated_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
-              - addForeignKeyConstraint:
-                    baseTableName: balances
-                    baseColumnNames: courier_id
-                    referencedTableName: couriers
-                    referencedColumnNames: id
-                    constraintName: fk_balances_couriers
-              - createTable:
-                    tableName: earnings
-                    columns:
-                        - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
-                        - column: { name: courier_id, type: BIGINT, constraints: { nullable: false } }
-                        - column: { name: gross_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
-                        - column: { name: commission_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
-                        - column: { name: net_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
-                        - column: { name: status, type: VARCHAR(40), constraints: { nullable: false } }
-                        - column: { name: idempotency_key, type: VARCHAR(120), constraints: { nullable: false, unique: true } }
-                        - column: { name: work_date, type: DATE, constraints: { nullable: false } }
-                        - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
-                        - column: { name: processed_at, type: TIMESTAMP }
-              - addForeignKeyConstraint:
-                    baseTableName: earnings
-                    baseColumnNames: courier_id
-                    referencedTableName: couriers
-                    referencedColumnNames: id
-                    constraintName: fk_earnings_couriers
-              - createTable:
-                    tableName: payouts
-                    columns:
-                        - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
-                        - column: { name: courier_id, type: BIGINT, constraints: { nullable: false } }
-                        - column: { name: amount, type: DECIMAL(15,2), constraints: { nullable: false } }
-                        - column: { name: status, type: VARCHAR(40), constraints: { nullable: false } }
-                        - column: { name: requested_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
-                        - column: { name: completed_at, type: TIMESTAMP }
-              - addForeignKeyConstraint:
-                    baseTableName: payouts
-                    baseColumnNames: courier_id
-                    referencedTableName: couriers
-                    referencedColumnNames: id
-                    constraintName: fk_payouts_couriers
-              - createTable:
-                    tableName: transactions
-                    columns:
-                        - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
-                        - column: { name: courier_id, type: BIGINT, constraints: { nullable: false } }
-                        - column: { name: type, type: VARCHAR(60), constraints: { nullable: false } }
-                        - column: { name: amount, type: DECIMAL(15,2), constraints: { nullable: false } }
-                        - column: { name: reference_id, type: BIGINT }
-                        - column: { name: description, type: VARCHAR(255) }
-                        - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
-              - addForeignKeyConstraint:
-                    baseTableName: transactions
-                    baseColumnNames: courier_id
-                    referencedTableName: couriers
-                    referencedColumnNames: id
-                    constraintName: fk_transactions_couriers
-              - createTable:
-                    tableName: shedlock
-                    columns:
-                        - column: { name: name, type: VARCHAR(64), constraints: { primaryKey: true, nullable: false } }
-                        - column: { name: lock_until, type: TIMESTAMP(3), constraints: { nullable: false } }
-                        - column: { name: locked_at, type: TIMESTAMP(3), constraints: { nullable: false } }
-                        - column: { name: locked_by, type: VARCHAR(255), constraints: { nullable: false } }
+  - changeSet:
+      id: 001-create-core-schema
+      author: ali
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: email, type: VARCHAR(180), constraints: { nullable: false, unique: true } }
+              - column: { name: password_hash, type: VARCHAR(255), constraints: { nullable: false } }
+              - column: { name: full_name, type: VARCHAR(180), constraints: { nullable: false } }
+              - column: { name: role, type: VARCHAR(40), constraints: { nullable: false } }
+              - column: { name: status, type: VARCHAR(40), constraints: { nullable: false } }
+              - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
+        - createTable:
+            tableName: companies
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: name, type: VARCHAR(180), constraints: { nullable: false } }
+              - column: { name: commission_rate, type: DECIMAL(5,2), constraints: { nullable: false } }
+              - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
+        - createTable:
+            tableName: couriers
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: user_id, type: BIGINT, constraints: { nullable: false, unique: true } }
+              - column: { name: company_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: phone_number, type: VARCHAR(40) }
+              - column: { name: active, type: BOOLEAN, defaultValueBoolean: true }
+              - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: couriers
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_couriers_users
+        - addForeignKeyConstraint:
+            baseTableName: couriers
+            baseColumnNames: company_id
+            referencedTableName: companies
+            referencedColumnNames: id
+            constraintName: fk_couriers_companies
+        - createTable:
+            tableName: balances
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: courier_id, type: BIGINT, constraints: { nullable: false, unique: true } }
+              - column: { name: available_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
+              - column: { name: reserved_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
+              - column: { name: version, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: updated_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: balances
+            baseColumnNames: courier_id
+            referencedTableName: couriers
+            referencedColumnNames: id
+            constraintName: fk_balances_couriers
+        - createTable:
+            tableName: earnings
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: courier_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: gross_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
+              - column: { name: commission_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
+              - column: { name: net_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
+              - column: { name: status, type: VARCHAR(40), constraints: { nullable: false } }
+              - column: { name: idempotency_key, type: VARCHAR(120), constraints: { nullable: false, unique: true } }
+              - column: { name: work_date, type: DATE, constraints: { nullable: false } }
+              - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
+              - column: { name: processed_at, type: TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: earnings
+            baseColumnNames: courier_id
+            referencedTableName: couriers
+            referencedColumnNames: id
+            constraintName: fk_earnings_couriers
+        - createTable:
+            tableName: payouts
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: courier_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: amount, type: DECIMAL(15,2), constraints: { nullable: false } }
+              - column: { name: status, type: VARCHAR(40), constraints: { nullable: false } }
+              - column: { name: requested_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
+              - column: { name: completed_at, type: TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: payouts
+            baseColumnNames: courier_id
+            referencedTableName: couriers
+            referencedColumnNames: id
+            constraintName: fk_payouts_couriers
+        - createTable:
+            tableName: transactions
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: courier_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: type, type: VARCHAR(60), constraints: { nullable: false } }
+              - column: { name: amount, type: DECIMAL(15,2), constraints: { nullable: false } }
+              - column: { name: reference_id, type: BIGINT }
+              - column: { name: description, type: VARCHAR(255) }
+              - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
+        - addForeignKeyConstraint:
+            baseTableName: transactions
+            baseColumnNames: courier_id
+            referencedTableName: couriers
+            referencedColumnNames: id
+            constraintName: fk_transactions_couriers
+        - addUniqueConstraint:
+            tableName: transactions
+            columnNames: type, reference_id
+            constraintName: uk_transactions_type_reference_id
+        - createTable:
+            tableName: shedlock
+            columns:
+              - column: { name: name, type: VARCHAR(64), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: lock_until, type: TIMESTAMP(3), constraints: { nullable: false } }
+              - column: { name: locked_at, type: TIMESTAMP(3), constraints: { nullable: false } }
+              - column: { name: locked_by, type: VARCHAR(255), constraints: { nullable: false } }

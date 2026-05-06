@@ -9,7 +9,10 @@ import java.time.Instant;
 
 @Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
-@Entity @Table(name = "transactions")
+@Entity
+@Table(name = "transactions", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_transactions_type_reference_id", columnNames = {"type", "reference_id"})
+})
 public class Transaction {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
