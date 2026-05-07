@@ -117,3 +117,28 @@ databaseChangeLog:
               - column: { name: lock_until, type: TIMESTAMP(3), constraints: { nullable: false } }
               - column: { name: locked_at, type: TIMESTAMP(3), constraints: { nullable: false } }
               - column: { name: locked_by, type: VARCHAR(255), constraints: { nullable: false } }
+  - changeSet:
+      id: 002-create-refresh-tokens
+      author: ali
+      changes:
+        - createTable:
+            tableName: refresh_tokens
+            columns:
+              - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
+              - column: { name: token, type: VARCHAR(255), constraints: { nullable: false, unique: true } }
+              - column: { name: user_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: expires_at, type: TIMESTAMP, constraints: { nullable: false } }
+              - column: { name: revoked, type: BOOLEAN, defaultValueBoolean: false, constraints: { nullable: false } }
+              - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP, constraints: { nullable: false } }
+        - addForeignKeyConstraint:
+            baseTableName: refresh_tokens
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_refresh_tokens_users
+        - createIndex:
+            tableName: refresh_tokens
+            indexName: idx_refresh_tokens_user_id
+            columns:
+              - column:
+                  name: user_id
