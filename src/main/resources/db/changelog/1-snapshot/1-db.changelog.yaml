@@ -18,7 +18,7 @@ databaseChangeLog:
             columns:
               - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
               - column: { name: name, type: VARCHAR(180), constraints: { nullable: false } }
-              - column: { name: commission_rate, type: DECIMAL(5,2), constraints: { nullable: false } }
+              - column: { name: commission_rate, type: "DECIMAL(5,2)", constraints: { nullable: false } }
               - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
         - createTable:
             tableName: couriers
@@ -46,8 +46,8 @@ databaseChangeLog:
             columns:
               - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
               - column: { name: courier_id, type: BIGINT, constraints: { nullable: false, unique: true } }
-              - column: { name: available_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
-              - column: { name: reserved_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
+              - column: { name: available_amount, type: "DECIMAL(15,2)", constraints: { nullable: false } }
+              - column: { name: reserved_amount, type: "DECIMAL(15,2)", constraints: { nullable: false } }
               - column: { name: version, type: BIGINT, constraints: { nullable: false } }
               - column: { name: updated_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
         - addForeignKeyConstraint:
@@ -61,9 +61,9 @@ databaseChangeLog:
             columns:
               - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
               - column: { name: courier_id, type: BIGINT, constraints: { nullable: false } }
-              - column: { name: gross_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
-              - column: { name: commission_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
-              - column: { name: net_amount, type: DECIMAL(15,2), constraints: { nullable: false } }
+              - column: { name: gross_amount, type: "DECIMAL(15,2)", constraints: { nullable: false } }
+              - column: { name: commission_amount, type: "DECIMAL(15,2)", constraints: { nullable: false } }
+              - column: { name: net_amount, type: "DECIMAL(15,2)", constraints: { nullable: false } }
               - column: { name: status, type: VARCHAR(40), constraints: { nullable: false } }
               - column: { name: idempotency_key, type: VARCHAR(120), constraints: { nullable: false, unique: true } }
               - column: { name: work_date, type: DATE, constraints: { nullable: false } }
@@ -80,7 +80,7 @@ databaseChangeLog:
             columns:
               - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
               - column: { name: courier_id, type: BIGINT, constraints: { nullable: false } }
-              - column: { name: amount, type: DECIMAL(15,2), constraints: { nullable: false } }
+              - column: { name: amount, type: "DECIMAL(15,2)", constraints: { nullable: false } }
               - column: { name: status, type: VARCHAR(40), constraints: { nullable: false } }
               - column: { name: requested_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
               - column: { name: completed_at, type: TIMESTAMP }
@@ -96,7 +96,7 @@ databaseChangeLog:
               - column: { name: id, type: BIGSERIAL, constraints: { primaryKey: true } }
               - column: { name: courier_id, type: BIGINT, constraints: { nullable: false } }
               - column: { name: type, type: VARCHAR(60), constraints: { nullable: false } }
-              - column: { name: amount, type: DECIMAL(15,2), constraints: { nullable: false } }
+              - column: { name: amount, type: "DECIMAL(15,2)", constraints: { nullable: false } }
               - column: { name: reference_id, type: BIGINT }
               - column: { name: description, type: VARCHAR(255) }
               - column: { name: created_at, type: TIMESTAMP, defaultValueComputed: CURRENT_TIMESTAMP }
