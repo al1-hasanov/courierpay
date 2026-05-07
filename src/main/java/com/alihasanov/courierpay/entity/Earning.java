@@ -32,5 +32,9 @@ public class Earning {
     private Instant createdAt;
     @Column(name = "processed_at")
     private Instant processedAt;
+
+    public Long getId() {
+        return id;
+    }
     @PrePersist void prePersist() { createdAt = Instant.now(); }
 }
