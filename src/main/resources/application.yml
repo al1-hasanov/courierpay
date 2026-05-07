@@ -2,9 +2,9 @@ spring:
   application:
     name: courierpay
   datasource:
-    url: jdbc:postgresql://localhost:5432/courierpay
-    username: courierpay
-    password: courierpay
+    url: jdbc:postgresql://${SPRING_DATASOURCE_HOST:localhost}:${SPRING_DATASOURCE_PORT:5432}/${SPRING_DATASOURCE_DATABASE:courierpay}
+    username: ${SPRING_DATASOURCE_USERNAME:courierpay}
+    password: ${SPRING_DATASOURCE_PASSWORD:courierpay}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -15,7 +15,7 @@ spring:
   liquibase:
     enabled: true
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: courierpay-service
       auto-offset-reset: earliest
@@ -30,16 +30,18 @@ spring:
       missing-topics-fatal: false
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 app:
   security:
-    jwt-secret: "VGhlIGhheSBmYWN0b3J5IHJlYWxpemVkIHRoYXQgaXQgd2FudGVkIHRvIGJlIGEgY2F0LCBhbmQgZ3JldyB0ZW50YWNsZXMgb2Ygd2lzZG9tIGluIG9yZGVyIHRvIG92ZXJ0aHJvdyB0aGUgc2VuYXRlLg=="
-    jwt-expiration-minutes: 120
+    jwt-secret: ${JWT_SECRET:VGhlIGhheSBmYWN0b3J5IHJlYWxpemVkIHRoYXQgaXQgd2FudGVkIHRvIGJlIGEgY2F0LCBhbmQgZ3JldyB0ZW50YWNsZXMgb2Ygd2lzZG9tIGluIG9yZGVyIHRvIG92ZXJ0aHJvdyB0aGUgc2VuYXRlLg==}
+    jwt-expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
+    refresh-token-expiration-days: ${REFRESH_TOKEN_EXPIRATION_DAYS:7}
   kafka:
+    enabled: ${KAFKA_ENABLED:false}
     topics:
-      earning-created: earning.created
-      payout-requested: payout.requested
+      earning-created: ${EARNING_CREATED_TOPIC:earning.created}
+      payout-requested: ${PAYOUT_REQUESTED_TOPIC:payout.requested}
 
 springdoc:
   swagger-ui:

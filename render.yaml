@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: courierpay-api
+    runtime: docker
+    plan: free
+    branch: develop
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: SPRING_DATASOURCE_HOST
+        fromDatabase:
+          name: courierpay-db
+          property: host
+      - key: SPRING_DATASOURCE_PORT
+        fromDatabase:
+          name: courierpay-db
+          property: port
+      - key: SPRING_DATASOURCE_DATABASE
+        fromDatabase:
+          name: courierpay-db
+          property: database
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: courierpay-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: courierpay-db
+          property: password
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRATION_MINUTES
+        value: 120
+      - key: REFRESH_TOKEN_EXPIRATION_DAYS
+        value: 7
+      - key: KAFKA_ENABLED
+        value: false
+
+databases:
+  - name: courierpay-db
+    plan: free
+    databaseName: courierpay
+    user: courierpay
+    postgresMajorVersion: "16"

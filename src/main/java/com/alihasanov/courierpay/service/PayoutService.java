@@ -30,6 +30,9 @@ public class PayoutService {
     private final TransactionService transactionService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
+    @Value("${app.kafka.enabled:false}")
+    private boolean kafkaEnabled;
+
     @Value("${app.kafka.topics.payout-requested}")
     private String payoutRequestedTopic;
 
@@ -45,7 +48,9 @@ public class PayoutService {
                 .amount(request.amount())
                 .status(PayoutStatus.REQUESTED)
                 .build());
-        kafkaTemplate.send(payoutRequestedTopic, payout.getId().toString(), new PayoutRequestedEvent(payout.getId()));
+        if (kafkaEnabled) {
+            kafkaTemplate.send(payoutRequestedTopic, payout.getId().toString(), new PayoutRequestedEvent(payout.getId()));
+        }
         return toResponse(payout);
     }
 
