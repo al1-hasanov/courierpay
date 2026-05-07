@@ -1,18 +1,19 @@
 package com.alihasanov.courierpay.exception;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 
 import java.util.Locale;
 import java.util.Map;
 
-@Slf4j
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class ApplicationException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger log = LoggerFactory.getLogger(ApplicationException.class);
 
     private final ErrorResponse errorResponse;
     private final Map<String, Object> messageArguments;
