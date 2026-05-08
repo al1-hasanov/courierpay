@@ -9,6 +9,8 @@ public enum CourierPayErrorResponse implements ErrorResponse {
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", HttpStatus.INTERNAL_SERVER_ERROR, "{message}"),
 
     EMAIL_ALREADY_REGISTERED("EMAIL_ALREADY_REGISTERED", HttpStatus.BAD_REQUEST, "Email already registered"),
+    COURIER_ACCESS_DENIED("COURIER_ACCESS_DENIED", HttpStatus.FORBIDDEN, "Couriers can only access their own resources"),
+    AUTHENTICATION_REQUIRED("AUTHENTICATION_REQUIRED", HttpStatus.FORBIDDEN, "Authentication is required"),
     BALANCE_NOT_FOUND("BALANCE_NOT_FOUND", HttpStatus.NOT_FOUND, "Balance not found"),
     INSUFFICIENT_AVAILABLE_BALANCE("INSUFFICIENT_AVAILABLE_BALANCE", HttpStatus.BAD_REQUEST, "Insufficient available balance"),
     COMPANY_NOT_FOUND("COMPANY_NOT_FOUND", HttpStatus.NOT_FOUND, "Company not found"),

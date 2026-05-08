@@ -2,6 +2,7 @@ package com.alihasanov.courierpay.service;
 
 import com.alihasanov.courierpay.entity.AppUser;
 import com.alihasanov.courierpay.enums.RoleName;
+import com.alihasanov.courierpay.exception.BusinessException;
 import com.alihasanov.courierpay.exception.NotFoundException;
 import com.alihasanov.courierpay.repository.CourierRepository;
 import com.alihasanov.courierpay.repository.UserRepository;
@@ -10,8 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.COURIER_NOT_FOUND;
-import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.USER_NOT_FOUND;
+import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.*;
 
 @Service
 public class CourierAccessService {
@@ -30,7 +30,7 @@ public class CourierAccessService {
 
         var currentCourierId = getCurrentCourierId();
         if (!currentCourierId.equals(courierId)) {
-            throw new AccessDeniedException("Couriers can only access their own resources");
+            throw new BusinessException(COURIER_ACCESS_DENIED);
         }
     }
 
@@ -52,7 +52,7 @@ public class CourierAccessService {
     private String getCurrentUserEmail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getName() == null) {
-            throw new AccessDeniedException("Authentication is required");
+            throw new BusinessException(AUTHENTICATION_REQUIRED);
         }
         return authentication.getName();
     }
