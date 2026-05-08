@@ -16,6 +16,7 @@ import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.INSUFF
 @RequiredArgsConstructor
 public class BalanceService {
     private final BalanceRepository balanceRepository;
+    private final CourierAccessService courierAccessService;
 
     public void createInitialBalance(Courier courier) {
         balanceRepository.save(Balance.builder()
@@ -26,6 +27,7 @@ public class BalanceService {
     }
 
     public Balance getByCourierId(Long courierId) {
+        courierAccessService.assertCanAccessCourier(courierId);
         return balanceRepository.findByCourierId(courierId)
                 .orElseThrow(() -> new NotFoundException(BALANCE_NOT_FOUND));
     }

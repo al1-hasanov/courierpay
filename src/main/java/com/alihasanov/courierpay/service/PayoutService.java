@@ -28,6 +28,7 @@ public class PayoutService {
     private final CourierService courierService;
     private final BalanceService balanceService;
     private final TransactionService transactionService;
+    private final CourierAccessService courierAccessService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Value("${app.kafka.enabled:false}")
@@ -38,6 +39,7 @@ public class PayoutService {
 
     @Transactional
     public PayoutResponse request(RequestPayoutRequest request) {
+        courierAccessService.assertCanAccessCourier(request.courierId());
         var courier = courierService.get(request.courierId());
         var balance = balanceService.getByCourierId(courier.getId());
         if (balance.getAvailableAmount().compareTo(request.amount()) < 0) {
@@ -74,7 +76,13 @@ public class PayoutService {
         return toResponse(payout);
     }
 
-    public List<PayoutResponse> findAll() { return payoutRepository.findAll().stream().map(this::toResponse).toList(); }
+    public List<PayoutResponse> findAll() {
+        if (courierAccessService.isCurrentUserCourier()) {
+            var courierId = courierAccessService.getCurrentCourierId();
+            return payoutRepository.findByCourierId(courierId).stream().map(this::toResponse).toList();
+        }
+        return payoutRepository.findAll().stream().map(this::toResponse).toList();
+    }
 
     private Payout get(Long id) { return payoutRepository.findById(id).orElseThrow(() -> new NotFoundException(PAYOUT_NOT_FOUND)); }
     private PayoutResponse toResponse(Payout p) { return new PayoutResponse(p.getId(), p.getCourier().getId(), p.getAmount(), p.getStatus()); }

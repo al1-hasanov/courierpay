@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface PayoutRepository extends JpaRepository<Payout, Long> {
     List<Payout> findByStatusOrderByRequestedAtAsc(PayoutStatus status);
+    List<Payout> findByCourierId(Long courierId);
 }
