@@ -7,6 +7,7 @@ import com.alihasanov.courierpay.enums.PayoutStatus;
 import com.alihasanov.courierpay.enums.TransactionType;
 import com.alihasanov.courierpay.entity.Payout;
 import com.alihasanov.courierpay.event.PayoutRequestedEvent;
+import com.alihasanov.courierpay.mapper.PayoutMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -30,6 +31,7 @@ public class PayoutService {
     private final TransactionService transactionService;
     private final CourierAccessService courierAccessService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final PayoutMapper payoutMapper;
 
     @Value("${app.kafka.enabled:false}")
     private boolean kafkaEnabled;
@@ -53,7 +55,7 @@ public class PayoutService {
         if (kafkaEnabled) {
             kafkaTemplate.send(payoutRequestedTopic, payout.getId().toString(), new PayoutRequestedEvent(payout.getId()));
         }
-        return toResponse(payout);
+        return payoutMapper.toResponse(payout);
     }
 
     @Transactional
@@ -66,24 +68,23 @@ public class PayoutService {
         transactionService.record(payout.getCourier(), TransactionType.PAYOUT_DEBIT, payout.getAmount(), payout.getId(), "Payout completed internally");
         payout.setStatus(PayoutStatus.COMPLETED);
         payout.setCompletedAt(Instant.now());
-        return toResponse(payout);
+        return payoutMapper.toResponse(payout);
     }
 
     @Transactional
     public PayoutResponse reject(Long payoutId) {
         var payout = get(payoutId);
         payout.setStatus(PayoutStatus.REJECTED);
-        return toResponse(payout);
+        return payoutMapper.toResponse(payout);
     }
 
     public List<PayoutResponse> findAll() {
         if (courierAccessService.isCurrentUserCourier()) {
             var courierId = courierAccessService.getCurrentCourierId();
-            return payoutRepository.findByCourierId(courierId).stream().map(this::toResponse).toList();
+            return payoutRepository.findByCourierId(courierId).stream().map(payoutMapper::toResponse).toList();
         }
-        return payoutRepository.findAll().stream().map(this::toResponse).toList();
+        return payoutRepository.findAll().stream().map(payoutMapper::toResponse).toList();
     }
 
     private Payout get(Long id) { return payoutRepository.findById(id).orElseThrow(() -> new NotFoundException(PAYOUT_NOT_FOUND)); }
-    private PayoutResponse toResponse(Payout p) { return new PayoutResponse(p.getId(), p.getCourier().getId(), p.getAmount(), p.getStatus()); }
 }

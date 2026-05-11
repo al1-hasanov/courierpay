@@ -2,6 +2,7 @@ package com.alihasanov.courierpay.service;
 
 import com.alihasanov.courierpay.entity.Courier;
 import com.alihasanov.courierpay.exception.NotFoundException;
+import com.alihasanov.courierpay.mapper.CourierMapper;
 import com.alihasanov.courierpay.repository.CourierRepository;
 import com.alihasanov.courierpay.repository.UserRepository;
 import java.util.List;
@@ -20,6 +21,7 @@ public class CourierService {
     private final UserRepository userRepository;
     private final CompanyService companyService;
     private final BalanceService balanceService;
+    private final CourierMapper courierMapper;
 
     @Transactional
     public CourierResponse create(CreateCourierRequest request) {
@@ -32,7 +34,7 @@ public class CourierService {
                 .active(true)
                 .build());
         balanceService.createInitialBalance(courier);
-        return toResponse(courier);
+        return courierMapper.toResponse(courier);
     }
 
     public Courier get(Long id) {
@@ -40,10 +42,7 @@ public class CourierService {
     }
 
     public List<CourierResponse> findAll() {
-        return courierRepository.findAll().stream().map(this::toResponse).toList();
+        return courierRepository.findAll().stream().map(courierMapper::toResponse).toList();
     }
 
-    private CourierResponse toResponse(Courier c) {
-        return new CourierResponse(c.getId(), c.getUser().getId(), c.getUser().getFullName(), c.getCompany().getId(), c.getCompany().getName(), c.getPhoneNumber(), c.isActive());
-    }
 }

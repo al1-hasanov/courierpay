@@ -7,6 +7,7 @@ import com.alihasanov.courierpay.exception.NotFoundException;
 import com.alihasanov.courierpay.enums.TransactionType;
 import com.alihasanov.courierpay.entity.Earning;
 import com.alihasanov.courierpay.event.EarningCreatedEvent;
+import com.alihasanov.courierpay.mapper.EarningMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -30,6 +31,7 @@ public class EarningService {
     private final BalanceService balanceService;
     private final TransactionService transactionService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final EarningMapper earningMapper;
 
     @Value("${app.kafka.enabled:false}")
     private boolean kafkaEnabled;
@@ -61,7 +63,7 @@ public class EarningService {
         if (kafkaEnabled) {
             kafkaTemplate.send(earningCreatedTopic, earning.getId().toString(), new EarningCreatedEvent(earning.getId()));
         }
-        return toResponse(earning);
+        return earningMapper.toResponse(earning);
     }
 
     @Transactional
@@ -76,10 +78,7 @@ public class EarningService {
     }
 
     public List<EarningResponse> findAll() {
-        return earningRepository.findAll().stream().map(this::toResponse).toList();
+        return earningRepository.findAll().stream().map(earningMapper::toResponse).toList();
     }
 
-    private EarningResponse toResponse(Earning e) {
-        return new EarningResponse(e.getId(), e.getCourier().getId(), e.getGrossAmount(), e.getCommissionAmount(), e.getNetAmount(), e.getStatus(), e.getWorkDate());
-    }
 }

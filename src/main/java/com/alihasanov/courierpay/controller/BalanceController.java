@@ -1,23 +1,21 @@
 package com.alihasanov.courierpay.controller;
 
+import com.alihasanov.courierpay.dto.BalanceDtos.BalanceResponse;
+import com.alihasanov.courierpay.mapper.BalanceMapper;
 import com.alihasanov.courierpay.service.BalanceService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/v1/balances")
 @RequiredArgsConstructor
 public class BalanceController {
     private final BalanceService balanceService;
+    private final BalanceMapper balanceMapper;
 
     @GetMapping("/couriers/{courierId}")
     BalanceResponse getByCourier(@PathVariable Long courierId) {
         var balance = balanceService.getByCourierId(courierId);
-        return new BalanceResponse(balance.getCourier().getId(), balance.getAvailableAmount(), balance.getReservedAmount());
+        return balanceMapper.toResponse(balance);
     }
-
-    public record BalanceResponse(Long courierId, BigDecimal availableAmount, BigDecimal reservedAmount) {}
 }
