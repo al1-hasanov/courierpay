@@ -4,6 +4,8 @@ CourierPay is a Spring Boot backend API for managing courier earnings, company c
 
 **Live Render URL:** https://courierpay.onrender.com
 
+**SWAGGER:** https://courierpay.onrender.com/swagger-ui/index.html
+
 Public check endpoints:
 
 ```text
