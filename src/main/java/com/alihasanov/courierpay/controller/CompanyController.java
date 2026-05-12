@@ -3,10 +3,10 @@ package com.alihasanov.courierpay.controller;
 import com.alihasanov.courierpay.service.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 import static com.alihasanov.courierpay.dto.CompanyDtos.*;
 
@@ -22,5 +22,10 @@ public class CompanyController {
     }
 
     @GetMapping
-    List<CompanyResponse> findAll() { return companyService.findAll(); }
+    Page<CompanyResponse> findAll(
+            @RequestParam(required = false) String name,
+            @PageableDefault(size = 20, sort = "id") Pageable pageable
+    ) {
+        return companyService.findAll(name, pageable);
+    }
 }

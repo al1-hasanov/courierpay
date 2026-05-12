@@ -5,8 +5,9 @@ import com.alihasanov.courierpay.exception.NotFoundException;
 import com.alihasanov.courierpay.mapper.CourierMapper;
 import com.alihasanov.courierpay.repository.CourierRepository;
 import com.alihasanov.courierpay.repository.UserRepository;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,8 +42,12 @@ public class CourierService {
         return courierRepository.findById(id).orElseThrow(() -> new NotFoundException(COURIER_NOT_FOUND));
     }
 
-    public List<CourierResponse> findAll() {
-        return courierRepository.findAll().stream().map(courierMapper::toResponse).toList();
+    @Transactional(readOnly = true)
+    public Page<CourierResponse> findAll(Long companyId, Boolean active, String fullName, Pageable pageable) {
+        return courierRepository.search(companyId, active, normalize(fullName), pageable).map(courierMapper::toResponse);
     }
 
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
 }

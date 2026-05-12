@@ -4,8 +4,9 @@ import com.alihasanov.courierpay.entity.Company;
 import com.alihasanov.courierpay.exception.NotFoundException;
 import com.alihasanov.courierpay.mapper.CompanyMapper;
 import com.alihasanov.courierpay.repository.CompanyRepository;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import static com.alihasanov.courierpay.dto.CompanyDtos.*;
@@ -25,12 +26,15 @@ public class CompanyService {
         return companyMapper.toResponse(company);
     }
 
-    public List<CompanyResponse> findAll() {
-        return companyRepository.findAll().stream().map(companyMapper::toResponse).toList();
+    public Page<CompanyResponse> findAll(String name, Pageable pageable) {
+        return companyRepository.search(normalize(name), pageable).map(companyMapper::toResponse);
     }
 
     public Company get(Long id) {
         return companyRepository.findById(id).orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
     }
 
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
 }

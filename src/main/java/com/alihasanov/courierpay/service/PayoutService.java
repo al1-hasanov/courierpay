@@ -10,12 +10,13 @@ import com.alihasanov.courierpay.event.PayoutRequestedEvent;
 import com.alihasanov.courierpay.mapper.PayoutMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 
 import static com.alihasanov.courierpay.dto.PayoutDtos.*;
 import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.ONLY_REQUESTED_PAYOUTS_CAN_BE_APPROVED;
@@ -78,12 +79,12 @@ public class PayoutService {
         return payoutMapper.toResponse(payout);
     }
 
-    public List<PayoutResponse> findAll() {
-        if (courierAccessService.isCurrentUserCourier()) {
-            var courierId = courierAccessService.getCurrentCourierId();
-            return payoutRepository.findByCourierId(courierId).stream().map(payoutMapper::toResponse).toList();
-        }
-        return payoutRepository.findAll().stream().map(payoutMapper::toResponse).toList();
+    @Transactional(readOnly = true)
+    public Page<PayoutResponse> findAll(Long courierId, PayoutStatus status, Instant requestedFrom, Instant requestedTo, Pageable pageable) {
+        Long effectiveCourierId = courierAccessService.isCurrentUserCourier()
+                ? courierAccessService.getCurrentCourierId()
+                : courierId;
+        return payoutRepository.search(effectiveCourierId, status, requestedFrom, requestedTo, pageable).map(payoutMapper::toResponse);
     }
 
     private Payout get(Long id) { return payoutRepository.findById(id).orElseThrow(() -> new NotFoundException(PAYOUT_NOT_FOUND)); }

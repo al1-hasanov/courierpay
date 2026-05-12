@@ -10,6 +10,8 @@ import com.alihasanov.courierpay.event.EarningCreatedEvent;
 import com.alihasanov.courierpay.mapper.EarningMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
-import java.util.List;
+import java.time.LocalDate;
 
 import static com.alihasanov.courierpay.dto.EarningDtos.*;
 import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.DUPLICATE_EARNING_IDEMPOTENCY_KEY;
@@ -77,8 +79,8 @@ public class EarningService {
         earning.setProcessedAt(Instant.now());
     }
 
-    public List<EarningResponse> findAll() {
-        return earningRepository.findAll().stream().map(earningMapper::toResponse).toList();
+    @Transactional(readOnly = true)
+    public Page<EarningResponse> findAll(Long courierId, EarningStatus status, LocalDate workDateFrom, LocalDate workDateTo, Pageable pageable) {
+        return earningRepository.search(courierId, status, workDateFrom, workDateTo, pageable).map(earningMapper::toResponse);
     }
-
 }

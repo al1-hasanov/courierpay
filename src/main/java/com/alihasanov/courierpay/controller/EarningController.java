@@ -1,12 +1,16 @@
 package com.alihasanov.courierpay.controller;
 
+import com.alihasanov.courierpay.enums.EarningStatus;
 import com.alihasanov.courierpay.service.EarningService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDate;
 
 import static com.alihasanov.courierpay.dto.EarningDtos.*;
 
@@ -23,5 +27,13 @@ public class EarningController {
     void process(@PathVariable Long id) { earningService.process(id); }
 
     @GetMapping
-    List<EarningResponse> findAll() { return earningService.findAll(); }
+    Page<EarningResponse> findAll(
+            @RequestParam(required = false) Long courierId,
+            @RequestParam(required = false) EarningStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate workDateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate workDateTo,
+            @PageableDefault(size = 20, sort = "id") Pageable pageable
+    ) {
+        return earningService.findAll(courierId, status, workDateFrom, workDateTo, pageable);
+    }
 }

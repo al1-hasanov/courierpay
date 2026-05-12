@@ -1,8 +1,10 @@
 package com.alihasanov.courierpay.service;
 
+import com.alihasanov.courierpay.enums.TransactionType;
 import com.alihasanov.courierpay.exception.InternalServerException;
 import com.alihasanov.courierpay.repository.TransactionRepository;
 import java.io.ByteArrayOutputStream;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
@@ -14,7 +16,7 @@ import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.EXPORT
 public class ReportService {
     private final TransactionRepository transactionRepository;
 
-    public byte[] exportTransactions() {
+    public byte[] exportTransactions(Long courierId, TransactionType type, Instant createdFrom, Instant createdTo) {
         try (var workbook = new XSSFWorkbook(); var out = new ByteArrayOutputStream()) {
             var sheet = workbook.createSheet("Transactions");
             var header = sheet.createRow(0);
@@ -23,7 +25,7 @@ public class ReportService {
             header.createCell(2).setCellValue("Type");
             header.createCell(3).setCellValue("Amount");
             header.createCell(4).setCellValue("Created At");
-            var transactions = transactionRepository.findAll();
+            var transactions = transactionRepository.searchForExport(courierId, type, createdFrom, createdTo);
             for (int i = 0; i < transactions.size(); i++) {
                 var t = transactions.get(i);
                 var row = sheet.createRow(i + 1);

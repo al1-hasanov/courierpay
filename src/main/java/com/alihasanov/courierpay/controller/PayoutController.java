@@ -1,12 +1,16 @@
 package com.alihasanov.courierpay.controller;
 
+import com.alihasanov.courierpay.enums.PayoutStatus;
 import com.alihasanov.courierpay.service.PayoutService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.Instant;
 
 import static com.alihasanov.courierpay.dto.PayoutDtos.*;
 
@@ -26,5 +30,13 @@ public class PayoutController {
     PayoutResponse reject(@PathVariable Long id) { return payoutService.reject(id); }
 
     @GetMapping
-    List<PayoutResponse> findAll() { return payoutService.findAll(); }
+    Page<PayoutResponse> findAll(
+            @RequestParam(required = false) Long courierId,
+            @RequestParam(required = false) PayoutStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant requestedFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant requestedTo,
+            @PageableDefault(size = 20, sort = "id") Pageable pageable
+    ) {
+        return payoutService.findAll(courierId, status, requestedFrom, requestedTo, pageable);
+    }
 }
