@@ -10,7 +10,10 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest(properties = "spring.liquibase.enabled=false")
+@DataJpaTest(properties = {
+        "spring.liquibase.enabled=false",
+        "spring.jpa.hibernate.ddl-auto=create-drop"
+})
 class CompanyRepositoryTest {
 
     @Autowired

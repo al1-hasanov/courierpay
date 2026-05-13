@@ -2,7 +2,9 @@ package com.alihasanov.courierpay.controller;
 
 import com.alihasanov.courierpay.dto.CompanyDtos.CompanyResponse;
 import com.alihasanov.courierpay.dto.CompanyDtos.CreateCompanyRequest;
+import com.alihasanov.courierpay.security.JwtService;
 import com.alihasanov.courierpay.service.CompanyService;
+import com.alihasanov.courierpay.service.CustomUserDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +39,12 @@ class CompanyControllerTest {
 
     @MockitoBean
     private CompanyService companyService;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @Test
     void create_shouldReturnCreatedCompany() throws Exception {

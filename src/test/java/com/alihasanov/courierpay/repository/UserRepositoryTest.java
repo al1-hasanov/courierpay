@@ -9,7 +9,10 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest(properties = "spring.liquibase.enabled=false")
+@DataJpaTest(properties = {
+        "spring.liquibase.enabled=false",
+        "spring.jpa.hibernate.ddl-auto=create-drop"
+})
 class UserRepositoryTest {
 
     @Autowired
