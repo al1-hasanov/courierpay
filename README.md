@@ -28,6 +28,7 @@ The root endpoint returns a simple API status response. Most business endpoints 
 - Swagger/OpenAPI
 - Docker and Docker Compose
 - GitHub Actions CI
+- JUnit 5, Mockito, MockMvc, Spring Boot Test, Data JPA Test, H2 test database
 - Render deployment
 
 ## Recently added features
@@ -40,6 +41,8 @@ The root endpoint returns a simple API status response. Most business endpoints 
 - **Courier data ownership:** couriers can only access their own balance and payouts.
 - **Render deployment:** the API is deployed as a Render web service.
 - **Public status endpoints:** `/` and `/healthz` are publicly accessible for browser checks and health checks.
+- **Automated test coverage:** added service unit tests, MVC slice tests, JPA repository slice tests, exception tests, and a full `@SpringBootTest` application wiring test.
+- **Dedicated test profile:** added `application-test.yml` with H2 PostgreSQL-mode database, disabled Liquibase, and disabled Kafka for repeatable CI-friendly tests.
 
 ## Main business flow
 
@@ -150,6 +153,25 @@ KAFKA_ENABLED=false
 ```
 
 Use Render's internal database hostname when the web service and database are in the same Render region.
+
+
+## Testing
+
+The project includes layered automated tests for both business logic and Spring wiring.
+
+```bash
+mvn test
+```
+
+Current test coverage includes:
+
+- **Full application wiring test:** `CourierPayApplicationTests` uses `@SpringBootTest` with the `test` profile to boot the full Spring context, verify controllers, services, repositories, security/JWT beans, ShedLock config, and the `/healthz` endpoint through `MockMvc`.
+- **MVC slice test:** `CompanyControllerTest` uses `@WebMvcTest` and `MockMvc` to verify company creation validation, JSON responses, filtering, pagination, and controller-to-service argument passing. Security collaborators are mocked so the controller layer can be tested without loading the full app.
+- **Repository slice tests:** `CompanyRepositoryTest` and `UserRepositoryTest` use `@DataJpaTest` with H2 in PostgreSQL compatibility mode and `ddl-auto=create-drop` to validate repository search, email lookup, and existence checks without requiring PostgreSQL in CI.
+- **Service unit tests:** `BalanceServiceTest` and `TransactionServiceTest` use JUnit 5 and Mockito to verify balance access checks, credit/debit behavior, insufficient-balance protection, and transaction persistence details.
+- **Exception tests:** `ApplicationExceptionTest` verifies placeholder handling, localized message formatting, and fallback behavior when localization dependencies are missing.
+
+The test profile lives in `src/test/resources/application-test.yml`. It keeps tests self-contained by using an in-memory H2 database, disabling Liquibase, and disabling Kafka runtime behavior through `app.kafka.enabled=false`.
 
 ## CI/CD
 
