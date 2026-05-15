@@ -30,6 +30,7 @@ The root endpoint returns a simple API status response. Most business endpoints 
 - GitHub Actions CI
 - JUnit 5, Mockito, MockMvc, Spring Boot Test, Data JPA Test, H2 test database
 - Render deployment
+- External managed Kafka service for deployed async event processing
 
 ## Recently added features
 
@@ -40,6 +41,7 @@ The root endpoint returns a simple API status response. Most business endpoints 
 - **Refresh tokens:** login/register return access and refresh tokens; refresh uses token rotation.
 - **Courier data ownership:** couriers can only access their own balance and payouts.
 - **Render deployment:** the API is deployed as a Render web service.
+- **External Kafka service:** deployed runtime can connect to a managed external Kafka broker, such as Aiven for Apache Kafka, instead of relying on local Docker Kafka.
 - **Public status endpoints:** `/` and `/healthz` are publicly accessible for browser checks and health checks.
 - **Automated test coverage:** added service unit tests, MVC slice tests, JPA repository slice tests, exception tests, and a full `@SpringBootTest` application wiring test.
 - **Dedicated test profile:** added `application-test.yml` with H2 PostgreSQL-mode database, disabled Liquibase, and disabled Kafka for repeatable CI-friendly tests.
@@ -117,10 +119,31 @@ REFRESH_TOKEN_EXPIRATION_DAYS=7
 KAFKA_ENABLED=false
 ```
 
-For Render, Kafka is temporarily disabled with:
+For local development or CI, Kafka can stay disabled:
 
 ```text
 KAFKA_ENABLED=false
+```
+
+For the deployed Render environment, Kafka can be enabled by connecting the app to an external managed Kafka service. This project was prepared to use an external Kafka broker, for example Aiven for Apache Kafka, because Render runs the Spring Boot API as a web service and does not provide Kafka inside the application container.
+
+Required Kafka deployment variables:
+
+```text
+KAFKA_ENABLED=true
+SPRING_KAFKA_BOOTSTRAP_SERVERS=<external-kafka-host>:<port>
+EARNING_CREATED_TOPIC=earning.created
+PAYOUT_REQUESTED_TOPIC=payout.requested
+SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=SASL_SSL
+SPRING_KAFKA_PROPERTIES_SASL_MECHANISM=PLAIN
+SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule required username="<username>" password="<password>";
+```
+
+The deployed Kafka service should contain these topics:
+
+```text
+earning.created
+payout.requested
 ```
 
 ## Render deployment
@@ -137,7 +160,7 @@ Render setup summary:
 - Runtime: Docker
 - Branch: `develop`
 - Database: Render PostgreSQL
-- Kafka: temporarily disabled in runtime config
+- Kafka: external managed Kafka service, configured through Render environment variables
 - Auto-deploy: enabled on commit
 
 Required Render environment variables:
@@ -149,10 +172,32 @@ SPRING_DATASOURCE_PASSWORD=<render-db-password>
 JWT_SECRET=<base64-secret>
 JWT_EXPIRATION_MINUTES=120
 REFRESH_TOKEN_EXPIRATION_DAYS=7
-KAFKA_ENABLED=false
+KAFKA_ENABLED=true
+SPRING_KAFKA_BOOTSTRAP_SERVERS=<external-kafka-host>:<port>
+EARNING_CREATED_TOPIC=earning.created
+PAYOUT_REQUESTED_TOPIC=payout.requested
+SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=SASL_SSL
+SPRING_KAFKA_PROPERTIES_SASL_MECHANISM=PLAIN
+SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule required username="<username>" password="<password>";
 ```
 
 Use Render's internal database hostname when the web service and database are in the same Render region.
+
+
+## External Kafka deployment
+
+Kafka is optional locally but can be enabled in the deployed environment through an external managed Kafka provider. The current deployment setup is designed for a managed broker such as Aiven for Apache Kafka.
+
+The application publishes domain events to:
+
+```text
+earning.created
+payout.requested
+```
+
+When Kafka is enabled, the `earning.created` topic is consumed by the earning processor listener, allowing earning processing and courier balance updates to run asynchronously. The scheduled pending-earning processor remains useful as a safety fallback for unprocessed records.
+
+In Render, do not use `localhost:9092`. The Render container must connect to the external Kafka bootstrap server provided by the managed Kafka service.
 
 
 ## Testing
