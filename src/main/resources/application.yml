@@ -34,6 +34,8 @@ server:
   port: ${PORT:8080}
 
 app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
   security:
     jwt-secret: ${JWT_SECRET:VGhlIGhheSBmYWN0b3J5IHJlYWxpemVkIHRoYXQgaXQgd2FudGVkIHRvIGJlIGEgY2F0LCBhbmQgZ3JldyB0ZW50YWNsZXMgb2Ygd2lzZG9tIGluIG9yZGVyIHRvIG92ZXJ0aHJvdyB0aGUgc2VuYXRlLg==}
     jwt-expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
