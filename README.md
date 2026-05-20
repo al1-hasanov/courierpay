@@ -1,10 +1,12 @@
 # CourierPay — Internal Courier Earnings & Payout System
 
-CourierPay is a Spring Boot backend API for managing courier earnings, company commissions, balances, and internal payout workflows.
+CourierPay is a Spring Boot backend API for managing courier earnings, company commissions, balances, and internal payout workflows. The project now also includes a React admin dashboard for operating the deployed API from a browser.
 
 **Live Render URL:** https://courierpay.onrender.com
 
 **SWAGGER:** https://courierpay.onrender.com/swagger-ui/index.html
+
+**Admin UI:** https://courierpay-admin-ui.onrender.com
 
 Public check endpoints:
 
@@ -26,10 +28,11 @@ The root endpoint returns a simple API status response. Most business endpoints 
 - ShedLock
 - JWT access tokens and refresh-token rotation
 - Swagger/OpenAPI
+- React, TypeScript, Vite, React Router, TanStack Query, Axios, Tailwind CSS
 - Docker and Docker Compose
 - GitHub Actions CI
 - JUnit 5, Mockito, MockMvc, Spring Boot Test, Data JPA Test, H2 test database
-- Render deployment
+- Render deployment for both backend API and frontend static site
 - External managed Kafka service for deployed async event processing
 
 ## Recently added features
@@ -41,6 +44,7 @@ The root endpoint returns a simple API status response. Most business endpoints 
 - **Refresh tokens:** login/register return access and refresh tokens; refresh uses token rotation.
 - **Courier data ownership:** couriers can only access their own balance and payouts.
 - **Render deployment:** the API is deployed as a Render web service.
+- **React admin UI:** added a Vite/React admin dashboard under `admin-ui/` for login, dashboard navigation, companies, couriers, earnings, payouts, balances, and report export workflows.
 - **External Kafka service:** deployed runtime can connect to a managed external Kafka broker, such as Aiven for Apache Kafka, instead of relying on local Docker Kafka.
 - **Public status endpoints:** `/` and `/healthz` are publicly accessible for browser checks and health checks.
 - **Automated test coverage:** added service unit tests, MVC slice tests, JPA repository slice tests, exception tests, and a full `@SpringBootTest` application wiring test.
@@ -78,7 +82,59 @@ General access rules:
 
 A `403 Forbidden` response on a protected endpoint usually means the API is reachable, but the request is missing a valid token or the user role is not allowed.
 
+## Admin UI
+
+The repository contains a separate frontend application in the `admin-ui/` folder. It is a React + TypeScript + Vite single-page admin dashboard that calls the Spring Boot REST API.
+
+Admin UI capabilities currently include:
+
+- Login with JWT access token storage
+- Protected admin routes
+- Dashboard layout with sidebar navigation
+- Company list and create form
+- Courier list
+- Earning list and process action
+- Payout list with approve/reject actions
+- Courier balance lookup
+- Transaction report export/download
+
+Project layout:
+
+```text
+courierpay/
+  src/                 # Spring Boot backend
+  pom.xml
+  Dockerfile
+  render.yaml
+  admin-ui/            # React/Vite frontend
+    src/
+    package.json
+    vite.config.ts
+```
+
+The frontend uses the `VITE_API_BASE_URL` environment variable to decide which backend API to call.
+
+Local frontend configuration:
+
+```text
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+Deployed frontend configuration:
+
+```text
+VITE_API_BASE_URL=https://courierpay.onrender.com
+```
+
+Because the frontend and backend run on different origins, the backend must allow the admin UI origin through CORS. The backend reads allowed origins from:
+
+```text
+APP_CORS_ALLOWED_ORIGINS=http://localhost:5173,https://courierpay-admin-ui.onrender.com
+```
+
 ## Run locally
+
+### Backend API
 
 Start infrastructure:
 
@@ -105,6 +161,28 @@ http://localhost:8080/
 http://localhost:8080/healthz
 ```
 
+### Admin UI
+
+From the `admin-ui/` folder:
+
+```bash
+npm install
+npm run dev
+```
+
+Local admin UI URL:
+
+```text
+http://localhost:5173
+```
+
+On Windows PowerShell, use `npm.cmd` if script execution blocks `npm`:
+
+```powershell
+npm.cmd install
+npm.cmd run dev
+```
+
 ## Configuration
 
 Important environment variables:
@@ -117,6 +195,7 @@ JWT_SECRET=<base64-secret>
 JWT_EXPIRATION_MINUTES=120
 REFRESH_TOKEN_EXPIRATION_DAYS=7
 KAFKA_ENABLED=false
+APP_CORS_ALLOWED_ORIGINS=http://localhost:5173,https://courierpay-admin-ui.onrender.com
 ```
 
 For local development or CI, Kafka can stay disabled:
@@ -137,6 +216,7 @@ PAYOUT_REQUESTED_TOPIC=payout.requested
 SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=SASL_SSL
 SPRING_KAFKA_PROPERTIES_SASL_MECHANISM=PLAIN
 SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule required username="<username>" password="<password>";
+APP_CORS_ALLOWED_ORIGINS=http://localhost:5173,https://courierpay-admin-ui.onrender.com
 ```
 
 The deployed Kafka service should contain these topics:
@@ -156,12 +236,24 @@ https://courierpay.onrender.com
 
 Render setup summary:
 
+Backend API:
+
 - Service type: Web Service
 - Runtime: Docker
 - Branch: `develop`
 - Database: Render PostgreSQL
 - Kafka: external managed Kafka service, configured through Render environment variables
 - Auto-deploy: enabled on commit
+
+Admin UI:
+
+- Service type: Static Site
+- Branch: `develop`
+- Root directory: `admin-ui`
+- Build command: `npm install && npm run build`
+- Publish directory: `dist`
+- Environment variable: `VITE_API_BASE_URL=https://courierpay.onrender.com`
+- Rewrite rule for React Router: `/* -> /index.html`
 
 Required Render environment variables:
 
@@ -227,9 +319,9 @@ git push origin develop
         ↓
 GitHub Actions runs build/tests
         ↓
-Render auto-deploys the Docker web service
+Render auto-deploys the Docker web service and static admin UI
         ↓
-Liquibase applies database migrations on startup
+Liquibase applies database migrations on backend startup
 ```
 
 ## Example requests
