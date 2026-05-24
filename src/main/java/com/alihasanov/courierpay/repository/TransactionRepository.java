@@ -3,13 +3,14 @@ package com.alihasanov.courierpay.repository;
 import com.alihasanov.courierpay.entity.Transaction;
 import com.alihasanov.courierpay.enums.TransactionType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
 
-public interface TransactionRepository extends JpaRepository<Transaction, Long> {
+public interface TransactionRepository extends JpaRepository<Transaction, Long>, JpaSpecificationExecutor<Transaction> {
     List<Transaction> findByCourierIdOrderByCreatedAtDesc(Long courierId);
 
     @Query("""

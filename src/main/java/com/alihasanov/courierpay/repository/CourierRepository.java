@@ -4,12 +4,13 @@ import com.alihasanov.courierpay.entity.Courier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface CourierRepository extends JpaRepository<Courier, Long> {
+public interface CourierRepository extends JpaRepository<Courier, Long>, JpaSpecificationExecutor<Courier> {
     Optional<Courier> findByUserEmail(String email);
 
     @Query("""

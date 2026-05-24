@@ -7,6 +7,7 @@ import com.alihasanov.courierpay.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import static com.alihasanov.courierpay.dto.CompanyDtos.*;
@@ -27,11 +28,23 @@ public class CompanyService {
     }
 
     public Page<CompanyResponse> findAll(String name, Pageable pageable) {
-        return companyRepository.search(normalize(name), pageable).map(companyMapper::toResponse);
+        return companyRepository.findAll(buildSpecification(normalize(name)), pageable).map(companyMapper::toResponse);
     }
 
     public Company get(Long id) {
         return companyRepository.findById(id).orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+    }
+
+    private Specification<Company> buildSpecification(String name) {
+        return (root, query, criteriaBuilder) -> {
+            if (name == null) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.like(
+                    criteriaBuilder.lower(root.<String>get("name")),
+                    "%" + name.toLowerCase() + "%"
+            );
+        };
     }
 
     private String normalize(String value) {

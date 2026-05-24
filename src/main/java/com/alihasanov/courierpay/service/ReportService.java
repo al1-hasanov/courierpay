@@ -1,5 +1,6 @@
 package com.alihasanov.courierpay.service;
 
+import com.alihasanov.courierpay.entity.Transaction;
 import com.alihasanov.courierpay.enums.TransactionType;
 import com.alihasanov.courierpay.exception.InternalServerException;
 import com.alihasanov.courierpay.repository.TransactionRepository;
@@ -7,6 +8,8 @@ import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.EXPORT_TRANSACTIONS_FAILED;
@@ -25,7 +28,10 @@ public class ReportService {
             header.createCell(2).setCellValue("Type");
             header.createCell(3).setCellValue("Amount");
             header.createCell(4).setCellValue("Created At");
-            var transactions = transactionRepository.searchForExport(courierId, type, createdFrom, createdTo);
+            var transactions = transactionRepository.findAll(
+                    buildSpecification(courierId, type, createdFrom, createdTo),
+                    Sort.by(Sort.Direction.DESC, "createdAt")
+            );
             for (int i = 0; i < transactions.size(); i++) {
                 var t = transactions.get(i);
                 var row = sheet.createRow(i + 1);
@@ -40,5 +46,24 @@ public class ReportService {
         } catch (Exception e) {
             throw new InternalServerException(EXPORT_TRANSACTIONS_FAILED, e);
         }
+    }
+
+    private Specification<Transaction> buildSpecification(Long courierId, TransactionType type, Instant createdFrom, Instant createdTo) {
+        return (root, query, criteriaBuilder) -> {
+            var predicate = criteriaBuilder.conjunction();
+            if (courierId != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("courier").get("id"), courierId));
+            }
+            if (type != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("type"), type));
+            }
+            if (createdFrom != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.greaterThanOrEqualTo(root.<Instant>get("createdAt"), createdFrom));
+            }
+            if (createdTo != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.lessThanOrEqualTo(root.<Instant>get("createdAt"), createdTo));
+            }
+            return predicate;
+        };
     }
 }

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,6 +82,26 @@ public class EarningService {
 
     @Transactional(readOnly = true)
     public Page<EarningResponse> findAll(Long courierId, EarningStatus status, LocalDate workDateFrom, LocalDate workDateTo, Pageable pageable) {
-        return earningRepository.search(courierId, status, workDateFrom, workDateTo, pageable).map(earningMapper::toResponse);
+        return earningRepository.findAll(buildSpecification(courierId, status, workDateFrom, workDateTo), pageable)
+                .map(earningMapper::toResponse);
+    }
+
+    private Specification<Earning> buildSpecification(Long courierId, EarningStatus status, LocalDate workDateFrom, LocalDate workDateTo) {
+        return (root, query, criteriaBuilder) -> {
+            var predicate = criteriaBuilder.conjunction();
+            if (courierId != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("courier").get("id"), courierId));
+            }
+            if (status != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("status"), status));
+            }
+            if (workDateFrom != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.greaterThanOrEqualTo(root.<LocalDate>get("workDate"), workDateFrom));
+            }
+            if (workDateTo != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.lessThanOrEqualTo(root.<LocalDate>get("workDate"), workDateTo));
+            }
+            return predicate;
+        };
     }
 }

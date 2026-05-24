@@ -8,6 +8,7 @@ import com.alihasanov.courierpay.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +45,27 @@ public class CourierService {
 
     @Transactional(readOnly = true)
     public Page<CourierResponse> findAll(Long companyId, Boolean active, String fullName, Pageable pageable) {
-        return courierRepository.search(companyId, active, normalize(fullName), pageable).map(courierMapper::toResponse);
+        return courierRepository.findAll(buildSpecification(companyId, active, normalize(fullName)), pageable)
+                .map(courierMapper::toResponse);
+    }
+
+    private Specification<Courier> buildSpecification(Long companyId, Boolean active, String fullName) {
+        return (root, query, criteriaBuilder) -> {
+            var predicate = criteriaBuilder.conjunction();
+            if (companyId != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("company").get("id"), companyId));
+            }
+            if (active != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("active"), active));
+            }
+            if (fullName != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("user").<String>get("fullName")),
+                        "%" + fullName.toLowerCase() + "%"
+                ));
+            }
+            return predicate;
+        };
     }
 
     private String normalize(String value) {
