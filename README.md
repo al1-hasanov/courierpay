@@ -196,7 +196,10 @@ JWT_EXPIRATION_MINUTES=120
 REFRESH_TOKEN_EXPIRATION_DAYS=7
 KAFKA_ENABLED=false
 APP_CORS_ALLOWED_ORIGINS=http://localhost:5173,https://courierpay-admin-ui.onrender.com
+LIQUIBASE_CONTEXTS=
 ```
+
+`LIQUIBASE_CONTEXTS` is intentionally empty by default. This keeps optional demo seed data from running in normal production deployments.
 
 For local development or CI, Kafka can stay disabled:
 
@@ -271,7 +274,10 @@ PAYOUT_REQUESTED_TOPIC=payout.requested
 SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=SASL_SSL
 SPRING_KAFKA_PROPERTIES_SASL_MECHANISM=PLAIN
 SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule required username="<username>" password="<password>";
+LIQUIBASE_CONTEXTS=
 ```
+
+Keep `LIQUIBASE_CONTEXTS` empty for normal production behavior. Use `LIQUIBASE_CONTEXTS=demo` only when you intentionally want to seed the demo admin/courier data.
 
 Use Render's internal database hostname when the web service and database are in the same Render region.
 
@@ -290,6 +296,35 @@ payout.requested
 When Kafka is enabled, the `earning.created` topic is consumed by the earning processor listener, allowing earning processing and courier balance updates to run asynchronously. The scheduled pending-earning processor remains useful as a safety fallback for unprocessed records.
 
 In Render, do not use `localhost:9092`. The Render container must connect to the external Kafka bootstrap server provided by the managed Kafka service.
+
+## Optional demo seed data
+
+The project includes an optional Liquibase demo-data changeset for the deployed admin UI:
+
+```text
+src/main/resources/db/changelog/1-snapshot/2-demo-data.changelog.yaml
+```
+
+This changeset is protected by the Liquibase context `demo`, so it does **not** run unless explicitly enabled. Normal production deployments should leave this unset:
+
+```text
+LIQUIBASE_CONTEXTS=
+```
+
+To seed a demo/portfolio database once, set this Render backend environment variable and redeploy the backend:
+
+```text
+LIQUIBASE_CONTEXTS=demo
+```
+
+Seeded demo login:
+
+```text
+Email: admin@courierpay.dev
+Password: Admin123!
+```
+
+The same changeset also creates demo companies, couriers, balances, earnings, payouts, and transaction history. After Liquibase applies it, you can remove or clear `LIQUIBASE_CONTEXTS`; Liquibase records the changeset in `DATABASECHANGELOG`, so it will not run again for that database.
 
 
 ## Testing

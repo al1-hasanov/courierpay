@@ -1,0 +1,78 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-seed-demo-admin-and-courier-data
+      author: ali
+      context: demo
+      dbms: postgresql
+      comment: Optional demo seed data for the deployed admin UI. Runs only when LIQUIBASE_CONTEXTS=demo is enabled.
+      changes:
+        - sql:
+            splitStatements: false
+            stripComments: true
+            sql: |
+              INSERT INTO users (id, email, password_hash, full_name, role, status, created_at) VALUES
+                (10001, 'admin@courierpay.dev', '$2y$10$9aQFVT0Jz5BWGnJnw/tkJeP6lijn1JxAtXudTPL7c5kFCOseFQRYy', 'CourierPay Admin', 'ADMIN', 'ACTIVE', NOW()),
+                (10002, 'manager@courierpay.dev', '$2y$10$9aQFVT0Jz5BWGnJnw/tkJeP6lijn1JxAtXudTPL7c5kFCOseFQRYy', 'CourierPay Manager', 'COMPANY_MANAGER', 'ACTIVE', NOW()),
+                (10101, 'rashad.mammadov@courierpay.dev', '$2y$10$H48LOHBbUJK.IwTSoY40pOs127TR/A83Aa1I0C.LxUD2nkvJXXrSW', 'Rashad Mammadov', 'COURIER', 'ACTIVE', NOW()),
+                (10102, 'leyla.aliyeva@courierpay.dev', '$2y$10$H48LOHBbUJK.IwTSoY40pOs127TR/A83Aa1I0C.LxUD2nkvJXXrSW', 'Leyla Aliyeva', 'COURIER', 'ACTIVE', NOW()),
+                (10103, 'murad.huseynov@courierpay.dev', '$2y$10$H48LOHBbUJK.IwTSoY40pOs127TR/A83Aa1I0C.LxUD2nkvJXXrSW', 'Murad Huseynov', 'COURIER', 'ACTIVE', NOW()),
+                (10104, 'nigar.karimova@courierpay.dev', '$2y$10$H48LOHBbUJK.IwTSoY40pOs127TR/A83Aa1I0C.LxUD2nkvJXXrSW', 'Nigar Karimova', 'COURIER', 'ACTIVE', NOW()),
+                (10105, 'emin.safarov@courierpay.dev', '$2y$10$H48LOHBbUJK.IwTSoY40pOs127TR/A83Aa1I0C.LxUD2nkvJXXrSW', 'Emin Safarov', 'COURIER', 'ACTIVE', NOW())
+              ON CONFLICT DO NOTHING;
+
+              INSERT INTO companies (id, name, commission_rate, created_at) VALUES
+                (10001, 'Wolt Demo Fleet', 10.00, NOW()),
+                (10002, 'Bolt Demo Fleet', 12.50, NOW()),
+                (10003, 'Uber Demo Fleet', 15.00, NOW())
+              ON CONFLICT DO NOTHING;
+
+              INSERT INTO couriers (id, user_id, company_id, phone_number, active, created_at) VALUES
+                (10001, 10101, 10001, '+994501110101', true, NOW()),
+                (10002, 10102, 10001, '+994501110102', true, NOW()),
+                (10003, 10103, 10002, '+994501110103', true, NOW()),
+                (10004, 10104, 10002, '+994501110104', true, NOW()),
+                (10005, 10105, 10003, '+994501110105', true, NOW())
+              ON CONFLICT DO NOTHING;
+
+              INSERT INTO balances (id, courier_id, available_amount, reserved_amount, version, updated_at) VALUES
+                (10001, 10001, 245.50, 0.00, 0, NOW()),
+                (10002, 10002, 118.75, 25.00, 0, NOW()),
+                (10003, 10003, 320.00, 0.00, 0, NOW()),
+                (10004, 10004, 76.40, 0.00, 0, NOW()),
+                (10005, 10005, 510.25, 60.00, 0, NOW())
+              ON CONFLICT DO NOTHING;
+
+              INSERT INTO earnings (id, courier_id, gross_amount, commission_amount, net_amount, status, idempotency_key, work_date, created_at, processed_at) VALUES
+                (10001, 10001, 120.00, 12.00, 108.00, 'PROCESSED', 'demo-earning-10001', CURRENT_DATE - INTERVAL '5 days', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
+                (10002, 10001, 85.00, 8.50, 76.50, 'PROCESSED', 'demo-earning-10002', CURRENT_DATE - INTERVAL '3 days', NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days'),
+                (10003, 10002, 95.00, 9.50, 85.50, 'PENDING', 'demo-earning-10003', CURRENT_DATE - INTERVAL '1 day', NOW() - INTERVAL '1 day', NULL),
+                (10004, 10003, 220.00, 27.50, 192.50, 'PROCESSED', 'demo-earning-10004', CURRENT_DATE - INTERVAL '4 days', NOW() - INTERVAL '4 days', NOW() - INTERVAL '4 days'),
+                (10005, 10004, 70.00, 8.75, 61.25, 'PENDING', 'demo-earning-10005', CURRENT_DATE, NOW(), NULL),
+                (10006, 10005, 400.00, 60.00, 340.00, 'PROCESSED', 'demo-earning-10006', CURRENT_DATE - INTERVAL '2 days', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days')
+              ON CONFLICT DO NOTHING;
+
+              INSERT INTO payouts (id, courier_id, amount, status, requested_at, completed_at) VALUES
+                (10001, 10001, 50.00, 'COMPLETED', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days'),
+                (10002, 10002, 25.00, 'REQUESTED', NOW() - INTERVAL '6 hours', NULL),
+                (10003, 10005, 60.00, 'REQUESTED', NOW() - INTERVAL '3 hours', NULL)
+              ON CONFLICT DO NOTHING;
+
+              INSERT INTO transactions (id, courier_id, type, amount, reference_id, description, created_at) VALUES
+                (10001, 10001, 'EARNING_CREDIT', 108.00, 10001, 'Demo earning credited', NOW() - INTERVAL '5 days'),
+                (10002, 10001, 'COMMISSION_DEBIT', 12.00, 10001, 'Demo commission recorded', NOW() - INTERVAL '5 days'),
+                (10003, 10001, 'EARNING_CREDIT', 76.50, 10002, 'Demo earning credited', NOW() - INTERVAL '3 days'),
+                (10004, 10001, 'COMMISSION_DEBIT', 8.50, 10002, 'Demo commission recorded', NOW() - INTERVAL '3 days'),
+                (10005, 10001, 'PAYOUT_DEBIT', 50.00, 10001, 'Demo payout completed', NOW() - INTERVAL '2 days'),
+                (10006, 10003, 'EARNING_CREDIT', 192.50, 10004, 'Demo earning credited', NOW() - INTERVAL '4 days'),
+                (10007, 10003, 'COMMISSION_DEBIT', 27.50, 10004, 'Demo commission recorded', NOW() - INTERVAL '4 days'),
+                (10008, 10005, 'EARNING_CREDIT', 340.00, 10006, 'Demo earning credited', NOW() - INTERVAL '2 days'),
+                (10009, 10005, 'COMMISSION_DEBIT', 60.00, 10006, 'Demo commission recorded', NOW() - INTERVAL '2 days')
+              ON CONFLICT DO NOTHING;
+
+              SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT COALESCE(MAX(id), 1) FROM users), true);
+              SELECT setval(pg_get_serial_sequence('companies', 'id'), (SELECT COALESCE(MAX(id), 1) FROM companies), true);
+              SELECT setval(pg_get_serial_sequence('couriers', 'id'), (SELECT COALESCE(MAX(id), 1) FROM couriers), true);
+              SELECT setval(pg_get_serial_sequence('balances', 'id'), (SELECT COALESCE(MAX(id), 1) FROM balances), true);
+              SELECT setval(pg_get_serial_sequence('earnings', 'id'), (SELECT COALESCE(MAX(id), 1) FROM earnings), true);
+              SELECT setval(pg_get_serial_sequence('payouts', 'id'), (SELECT COALESCE(MAX(id), 1) FROM payouts), true);
+              SELECT setval(pg_get_serial_sequence('transactions', 'id'), (SELECT COALESCE(MAX(id), 1) FROM transactions), true);
