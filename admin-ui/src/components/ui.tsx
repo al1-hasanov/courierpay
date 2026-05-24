@@ -2,10 +2,10 @@ import type { ReactNode } from 'react';
 
 export function PageHeader({ title, description }: { title: string; description?: string }) {
   return (
-    <div className="mb-6">
-      <h1 className="text-2xl font-bold text-white">{title}</h1>
-      {description ? <p className="mt-1 text-sm text-slate-400">{description}</p> : null}
-    </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-white">{title}</h1>
+        {description ? <p className="mt-1 text-sm text-slate-400">{description}</p> : null}
+      </div>
   );
 }
 
@@ -15,23 +15,23 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
 
 export function Button({ children, className = '', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button
-      className={`rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      {...props}
-    >
-      {children}
-    </button>
+      <button
+          className={`rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+          {...props}
+      >
+        {children}
+      </button>
   );
 }
 
 export function SecondaryButton({ children, className = '', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button
-      className={`rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      {...props}
-    >
-      {children}
-    </button>
+      <button
+          className={`rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+          {...props}
+      >
+        {children}
+      </button>
   );
 }
 
@@ -49,5 +49,5 @@ export function ErrorMessage({ message }: { message?: string }) {
 }
 
 export function Table({ children }: { children: ReactNode }) {
-  return <div className="overflow-hidden rounded-2xl border border-slate-800"><table className="min-w-full divide-y divide-slate-800 text-sm">{children}</table></div>;
+  return <div className="overflow-x-auto rounded-2xl border border-slate-800"><table className="min-w-full divide-y divide-slate-800 text-sm">{children}</table></div>;
 }
