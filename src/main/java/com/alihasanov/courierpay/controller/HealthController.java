@@ -24,4 +24,14 @@ public class HealthController {
                 "status", "UP"
         );
     }
+
+    @GetMapping("/thread-info")
+    public Map<String, String> threadInfo() {
+        var currentThread = Thread.currentThread();
+
+        return Map.of(
+                "threadName", currentThread.getName(),
+                "isVirtual", String.valueOf(currentThread.isVirtual())
+        );
+    }
 }

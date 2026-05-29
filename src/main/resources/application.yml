@@ -1,6 +1,9 @@
 spring:
   application:
     name: courierpay
+  threads:
+    virtual:
+      enabled: true
   datasource:
     url: jdbc:postgresql://${SPRING_DATASOURCE_HOST:localhost}:${SPRING_DATASOURCE_PORT:5432}/${SPRING_DATASOURCE_DATABASE:courierpay}
     username: ${SPRING_DATASOURCE_USERNAME:courierpay}

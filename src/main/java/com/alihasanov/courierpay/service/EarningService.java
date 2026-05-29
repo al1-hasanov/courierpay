@@ -71,7 +71,7 @@ public class EarningService {
 
     @Transactional
     public void process(Long earningId) {
-        var earning = earningRepository.findById(earningId).orElseThrow(() -> new NotFoundException(EARNING_NOT_FOUND));
+        var earning = earningRepository.findByIdForUpdate(earningId).orElseThrow(() -> new NotFoundException(EARNING_NOT_FOUND));
         if (earning.getStatus() != EarningStatus.PENDING) return;
         balanceService.credit(earning.getCourier().getId(), earning.getNetAmount());
         transactionService.record(earning.getCourier(), TransactionType.EARNING_CREDIT, earning.getNetAmount(), earning.getId(), "Courier net earning credited");
