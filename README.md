@@ -13,6 +13,7 @@ Public check endpoints:
 ```text
 GET https://courierpay.onrender.com/
 GET https://courierpay.onrender.com/healthz
+GET https://courierpay.onrender.com/thread-info
 ```
 
 The root endpoint returns a simple API status response. Most business endpoints are protected by JWT authentication.
@@ -26,6 +27,7 @@ The root endpoint returns a simple API status response. Most business endpoints 
 - Liquibase
 - Kafka
 - ShedLock
+- Java virtual threads and `CompletableFuture`-based scheduled batch processing
 - JWT access tokens and refresh-token rotation
 - Swagger/OpenAPI
 - React, TypeScript, Vite, React Router, TanStack Query, Axios, Tailwind CSS
@@ -41,6 +43,8 @@ The root endpoint returns a simple API status response. Most business endpoints 
 - **Custom exceptions:** centralized application exceptions and consistent API error responses.
 - **Duplicate earning-event protection:** `EarningService` prevents duplicate processing of the same earning event.
 - **Separated async services:** Kafka listener and scheduled pending-earning job were moved out of `EarningService` into separate services.
+- **Virtual-thread support:** Spring virtual threads are enabled with `spring.threads.virtual.enabled=true`.
+- **Multithreaded pending-earning processor:** the scheduled pending-earning job processes pending earnings concurrently through a virtual-thread executor instead of processing the batch sequentially.
 - **Refresh tokens:** login/register return access and refresh tokens; refresh uses token rotation.
 - **Courier data ownership:** couriers can only access their own balance and payouts.
 - **Render deployment:** the API is deployed as a Render web service.
@@ -63,6 +67,51 @@ The root endpoint returns a simple API status response. Most business endpoints 
 9. Courier requests payout.
 10. Admin approves or rejects payout.
 11. If approved, courier balance is debited internally.
+
+
+## Multithreading and virtual threads
+
+CourierPay includes a small, visible multithreading demonstration using Java 21 virtual threads. Virtual threads are enabled globally in `src/main/resources/application.yml`:
+
+```yaml
+spring:
+  threads:
+    virtual:
+      enabled: true
+```
+
+The application also defines a dedicated virtual-thread executor in:
+
+```text
+src/main/java/com/alihasanov/courierpay/config/VirtualThreadConfig.java
+```
+
+That executor is used by the scheduled pending-earning processor:
+
+```text
+src/main/java/com/alihasanov/courierpay/schedule/PendingEarningsSchedulerService.java
+```
+
+Every 10 minutes, the scheduler loads up to 100 pending earnings. Instead of processing them one by one, it creates one `CompletableFuture.runAsync(...)` task per earning and runs those tasks on `Executors.newVirtualThreadPerTaskExecutor()`. This allows multiple pending earnings to be processed concurrently while keeping the code simple and readable.
+
+Concurrency safety is handled inside `EarningService.process(...)` by loading the earning with `findByIdForUpdate(...)`. This keeps the earning row locked for the duration of the transaction, so two concurrent workers cannot credit the same earning twice. Balance updates are also protected by the existing `findByCourierIdForUpdate(...)` logic in `BalanceService`.
+
+A simple demo endpoint is available to show the current request thread:
+
+```http
+GET /thread-info
+```
+
+Example response:
+
+```json
+{
+  "threadName": "...",
+  "isVirtual": "true"
+}
+```
+
+The scheduler logs also print the thread name and whether each task is running on a virtual thread.
 
 ## Security and access rules
 
