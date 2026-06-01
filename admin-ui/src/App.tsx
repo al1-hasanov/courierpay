@@ -9,6 +9,7 @@ import { EarningsPage } from './pages/EarningsPage';
 import { LoginPage } from './pages/LoginPage';
 import { PayoutsPage } from './pages/PayoutsPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { AuditLogsPage } from './pages/AuditLogsPage';
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -25,6 +26,7 @@ const router = createBrowserRouter([
           { path: '/payouts', element: <PayoutsPage /> },
           { path: '/balances', element: <BalancesPage /> },
           { path: '/reports', element: <ReportsPage /> },
+          { path: '/audit-logs', element: <AuditLogsPage /> },
         ],
       },
     ],

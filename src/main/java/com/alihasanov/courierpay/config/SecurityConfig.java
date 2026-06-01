@@ -68,6 +68,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/payouts/{id}/reject").hasAuthority(admin())
                         .requestMatchers(HttpMethod.GET, "/api/v1/payouts").hasAnyAuthority(adminCompanyManagerOrCourier())
                         .requestMatchers(HttpMethod.GET, "/api/v1/reports/**").hasAnyAuthority(adminOrCompanyManager())
+                        .requestMatchers(HttpMethod.GET, "/api/v1/audit-logs").hasAuthority(admin())
                         .anyRequest().denyAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

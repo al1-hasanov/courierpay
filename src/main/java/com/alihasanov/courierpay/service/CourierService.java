@@ -1,6 +1,7 @@
 package com.alihasanov.courierpay.service;
 
 import com.alihasanov.courierpay.entity.Courier;
+import com.alihasanov.courierpay.enums.AuditAction;
 import com.alihasanov.courierpay.exception.NotFoundException;
 import com.alihasanov.courierpay.mapper.CourierMapper;
 import com.alihasanov.courierpay.repository.CourierRepository;
@@ -24,6 +25,7 @@ public class CourierService {
     private final CompanyService companyService;
     private final BalanceService balanceService;
     private final CourierMapper courierMapper;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public CourierResponse create(CreateCourierRequest request) {
@@ -36,6 +38,13 @@ public class CourierService {
                 .active(true)
                 .build());
         balanceService.createInitialBalance(courier);
+        auditLogService.success(
+                AuditAction.CREATED_COURIER,
+                "Courier",
+                courier.getId(),
+                "Courier created",
+                "{\"userId\":" + user.getId() + ",\"companyId\":" + company.getId() + "}"
+        );
         return courierMapper.toResponse(courier);
     }
 

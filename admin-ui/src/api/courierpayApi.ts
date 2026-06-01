@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { AuthResponse, Balance, Company, Courier, Earning, Page, Payout } from '../types/api';
+import type { AuditLog, AuthResponse, Balance, Company, Courier, Earning, Page, Payout } from '../types/api';
 
 export async function login(email: string, password: string) {
   const { data } = await apiClient.post<AuthResponse>('/api/v1/auth/login', { email, password });
@@ -71,4 +71,18 @@ export async function getBalance(courierId: string) {
 
 export function getTransactionsExportUrl() {
   return `${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'}/api/v1/reports/transactions/export`;
+}
+
+
+export async function getAuditLogs(filters?: { actorEmail?: string; action?: string; status?: string }) {
+  const { data } = await apiClient.get<Page<AuditLog>>('/api/v1/audit-logs', {
+    params: {
+      actorEmail: filters?.actorEmail || undefined,
+      action: filters?.action || undefined,
+      status: filters?.status || undefined,
+      size: 50,
+      sort: 'id,desc',
+    },
+  });
+  return data;
 }

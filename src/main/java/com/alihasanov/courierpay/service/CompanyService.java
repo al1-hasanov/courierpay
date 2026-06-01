@@ -1,6 +1,7 @@
 package com.alihasanov.courierpay.service;
 
 import com.alihasanov.courierpay.entity.Company;
+import com.alihasanov.courierpay.enums.AuditAction;
 import com.alihasanov.courierpay.exception.NotFoundException;
 import com.alihasanov.courierpay.mapper.CompanyMapper;
 import com.alihasanov.courierpay.repository.CompanyRepository;
@@ -18,12 +19,20 @@ import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.COMPAN
 public class CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
+    private final AuditLogService auditLogService;
 
     public CompanyResponse create(CreateCompanyRequest request) {
         var company = companyRepository.save(Company.builder()
                 .name(request.name())
                 .commissionRate(request.commissionRate())
                 .build());
+        auditLogService.success(
+                AuditAction.CREATED_COMPANY,
+                "Company",
+                company.getId(),
+                "Company created",
+                "{\"name\":\"" + company.getName() + "\",\"commissionRate\":" + company.getCommissionRate() + "}"
+        );
         return companyMapper.toResponse(company);
     }
 

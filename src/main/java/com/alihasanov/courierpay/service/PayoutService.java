@@ -1,5 +1,6 @@
 package com.alihasanov.courierpay.service;
 
+import com.alihasanov.courierpay.enums.AuditAction;
 import com.alihasanov.courierpay.repository.PayoutRepository;
 import com.alihasanov.courierpay.exception.BusinessException;
 import com.alihasanov.courierpay.exception.NotFoundException;
@@ -34,6 +35,7 @@ public class PayoutService {
     private final CourierAccessService courierAccessService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final PayoutMapper payoutMapper;
+    private final AuditLogService auditLogService;
 
     @Value("${app.kafka.enabled:false}")
     private boolean kafkaEnabled;
@@ -57,6 +59,15 @@ public class PayoutService {
         if (kafkaEnabled) {
             kafkaTemplate.send(payoutRequestedTopic, payout.getId().toString(), new PayoutRequestedEvent(payout.getId()));
         }
+        auditLogService.success(
+                AuditAction.REQUESTED_PAYOUT,
+                "Payout",
+                payout.getId(),
+                "Payout requested",
+                "{\"courierId\":" + courier.getId()
+                        + ",\"amount\":" + payout.getAmount()
+                        + ",\"status\":\"" + payout.getStatus().name() + "\"}"
+        );
         return payoutMapper.toResponse(payout);
     }
 
@@ -70,6 +81,13 @@ public class PayoutService {
         transactionService.record(payout.getCourier(), TransactionType.PAYOUT_DEBIT, payout.getAmount(), payout.getId(), "Payout completed internally");
         payout.setStatus(PayoutStatus.COMPLETED);
         payout.setCompletedAt(Instant.now());
+        auditLogService.success(
+                AuditAction.APPROVED_PAYOUT,
+                "Payout",
+                payout.getId(),
+                "Payout approved",
+                "{\"courierId\":" + payout.getCourier().getId() + ",\"amount\":" + payout.getAmount() + "}"
+        );
         return payoutMapper.toResponse(payout);
     }
 
@@ -77,6 +95,13 @@ public class PayoutService {
     public PayoutResponse reject(Long payoutId) {
         var payout = get(payoutId);
         payout.setStatus(PayoutStatus.REJECTED);
+        auditLogService.success(
+                AuditAction.REJECTED_PAYOUT,
+                "Payout",
+                payout.getId(),
+                "Payout rejected",
+                "{\"courierId\":" + payout.getCourier().getId() + ",\"amount\":" + payout.getAmount() + "}"
+        );
         return payoutMapper.toResponse(payout);
     }
 

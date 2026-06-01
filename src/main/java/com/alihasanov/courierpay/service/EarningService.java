@@ -2,6 +2,7 @@ package com.alihasanov.courierpay.service;
 
 import com.alihasanov.courierpay.repository.EarningRepository;
 import com.alihasanov.courierpay.exception.BusinessException;
+import com.alihasanov.courierpay.enums.AuditAction;
 import com.alihasanov.courierpay.enums.EarningStatus;
 import com.alihasanov.courierpay.exception.NotFoundException;
 import com.alihasanov.courierpay.enums.TransactionType;
@@ -35,6 +36,7 @@ public class EarningService {
     private final TransactionService transactionService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final EarningMapper earningMapper;
+    private final AuditLogService auditLogService;
 
     @Value("${app.kafka.enabled:false}")
     private boolean kafkaEnabled;
@@ -66,6 +68,16 @@ public class EarningService {
         if (kafkaEnabled) {
             kafkaTemplate.send(earningCreatedTopic, earning.getId().toString(), new EarningCreatedEvent(earning.getId()));
         }
+        auditLogService.success(
+                AuditAction.CREATED_EARNING,
+                "Earning",
+                earning.getId(),
+                "Earning created",
+                "{\"courierId\":" + courier.getId()
+                        + ",\"grossAmount\":" + request.grossAmount()
+                        + ",\"netAmount\":" + netAmount
+                        + ",\"status\":\"" + earning.getStatus().name() + "\"}"
+        );
         return earningMapper.toResponse(earning);
     }
 
@@ -78,6 +90,15 @@ public class EarningService {
         transactionService.record(earning.getCourier(), TransactionType.COMMISSION_DEBIT, earning.getCommissionAmount(), earning.getId(), "Company commission calculated");
         earning.setStatus(EarningStatus.PROCESSED);
         earning.setProcessedAt(Instant.now());
+        auditLogService.success(
+                AuditAction.PROCESSED_EARNING,
+                "Earning",
+                earning.getId(),
+                "Earning processed and balance credited",
+                "{\"courierId\":" + earning.getCourier().getId()
+                        + ",\"netAmount\":" + earning.getNetAmount()
+                        + ",\"commissionAmount\":" + earning.getCommissionAmount() + "}"
+        );
     }
 
     @Transactional(readOnly = true)

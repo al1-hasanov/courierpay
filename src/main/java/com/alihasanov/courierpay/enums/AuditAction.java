@@ -1,0 +1,22 @@
+package com.alihasanov.courierpay.enums;
+
+public enum AuditAction {
+    REGISTERED_USER,
+    LOGIN,
+    REFRESHED_TOKEN,
+
+    CREATED_COMPANY,
+    CREATED_COURIER,
+
+    CREATED_EARNING,
+    PROCESSED_EARNING,
+
+    REQUESTED_PAYOUT,
+    APPROVED_PAYOUT,
+    REJECTED_PAYOUT,
+
+    CREDITED_BALANCE,
+    DEBITED_BALANCE,
+
+    RECORDED_TRANSACTION
+}

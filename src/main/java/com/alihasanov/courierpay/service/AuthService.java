@@ -5,6 +5,7 @@ import com.alihasanov.courierpay.dto.LoginRequest;
 import com.alihasanov.courierpay.dto.RefreshTokenRequest;
 import com.alihasanov.courierpay.dto.RegisterRequest;
 import com.alihasanov.courierpay.entity.AppUser;
+import com.alihasanov.courierpay.enums.AuditAction;
 import com.alihasanov.courierpay.enums.UserStatus;
 import com.alihasanov.courierpay.exception.BusinessException;
 import com.alihasanov.courierpay.repository.UserRepository;
@@ -27,6 +28,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -42,6 +44,14 @@ public class AuthService {
                 .build();
         userRepository.save(user);
 
+        auditLogService.success(
+                AuditAction.REGISTERED_USER,
+                "AppUser",
+                user.getId(),
+                "User registered",
+                "{\"email\":\"" + user.getEmail() + "\",\"role\":\"" + user.getRole().name() + "\"}"
+        );
+
         return createAuthResponse(user);
     }
 
@@ -50,6 +60,14 @@ public class AuthService {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.email(), request.password()));
         var user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
+
+        auditLogService.success(
+                AuditAction.LOGIN,
+                "AppUser",
+                user.getId(),
+                "User logged in",
+                "{\"email\":\"" + user.getEmail() + "\"}"
+        );
 
         return createAuthResponse(user);
     }
@@ -60,6 +78,14 @@ public class AuthService {
         var user = currentRefreshToken.getUser();
 
         refreshTokenService.revoke(currentRefreshToken);
+
+        auditLogService.success(
+                AuditAction.REFRESHED_TOKEN,
+                "AppUser",
+                user.getId(),
+                "Refresh token rotated",
+                null
+        );
 
         return createAuthResponse(user);
     }
