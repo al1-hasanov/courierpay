@@ -1,6 +1,6 @@
 # CourierPay — Internal Courier Earnings & Payout System
 
-CourierPay is a Spring Boot backend API for managing courier earnings, company commissions, balances, and internal payout workflows. The project now also includes a React admin dashboard for operating the deployed API from a browser.
+CourierPay is a Spring Boot backend API for managing courier earnings, company commissions, balances, internal payout workflows, and admin-readable audit logs for important business actions. The project now also includes a React admin dashboard for operating the deployed API from a browser.
 
 **Live Render URL:** https://courierpay.onrender.com
 
@@ -40,6 +40,7 @@ The root endpoint returns a simple API status response. Most business endpoints 
 ## Recently added features
 
 - **RBAC:** role-based access control for `ADMIN`, `COMPANY_MANAGER`, and `COURIER` users.
+- **Audit logs:** added persistent audit logging for authentication, company/courier creation, earning processing, payout requests, payout approvals/rejections, balance updates, and transaction/report events, with an admin-only API and React admin page.
 - **Custom exceptions:** centralized application exceptions and consistent API error responses.
 - **Duplicate earning-event protection:** `EarningService` prevents duplicate processing of the same earning event.
 - **Separated async services:** Kafka listener and scheduled pending-earning job were moved out of `EarningService` into separate services.
@@ -67,6 +68,7 @@ The root endpoint returns a simple API status response. Most business endpoints 
 9. Courier requests payout.
 10. Admin approves or rejects payout.
 11. If approved, courier balance is debited internally.
+12. Important business actions are recorded in `audit_logs` for admin review and traceability.
 
 
 ## Multithreading and virtual threads
@@ -123,6 +125,7 @@ General access rules:
 - `ADMIN` and `COMPANY_MANAGER` can manage couriers and earnings.
 - `COURIER` can request payouts.
 - `COURIER` can only access their own balance and payouts.
+- Only `ADMIN` users can read audit logs through `/api/v1/audit-logs`.
 - Public endpoints:
   - `/`
   - `/healthz`
@@ -146,6 +149,7 @@ Admin UI capabilities currently include:
 - Payout list with approve/reject actions
 - Courier balance lookup
 - Transaction report export/download
+- Audit log viewing with filters for actor email, action, and status
 
 Project layout:
 
@@ -546,6 +550,15 @@ Couriers only receive their own payouts. Admins and company managers keep broade
 POST /api/v1/payouts/1/approve
 Authorization: Bearer <access-token>
 ```
+
+### List audit logs
+
+```http
+GET /api/v1/audit-logs?size=50&sort=id,desc
+Authorization: Bearer <admin-access-token>
+```
+
+Optional filters include `actorEmail`, `action`, `status`, `entityType`, `entityId`, `createdFrom`, and `createdTo`. Audit-log access is restricted to admins.
 
 ## Notes
 
