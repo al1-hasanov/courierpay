@@ -48,6 +48,7 @@ The root endpoint returns a simple API status response. Most business endpoints 
 - **Multithreaded pending-earning processor:** the scheduled pending-earning job processes pending earnings concurrently through a virtual-thread executor instead of processing the batch sequentially.
 - **Refresh tokens:** login/register return access and refresh tokens; refresh uses token rotation.
 - **Courier data ownership:** couriers can only access their own balance and payouts.
+- **Reserved-balance payout workflow:** payout requests now reserve funds immediately by moving money from `availableAmount` to `reservedAmount`; approval consumes the reserved amount and rejection releases it back to available balance.
 - **Render deployment:** the API is deployed as a Render web service.
 - **React admin UI:** added a Vite/React admin dashboard under `admin-ui/` for login, dashboard navigation, companies, couriers, earnings, payouts, balances, and report export workflows.
 - **External Kafka service:** deployed runtime can connect to a managed external Kafka broker, such as Aiven for Apache Kafka, instead of relying on local Docker Kafka.
@@ -66,9 +67,11 @@ The root endpoint returns a simple API status response. Most business endpoints 
 7. Kafka listener or scheduled job processes pending earnings.
 8. Courier balance is credited with the net amount.
 9. Courier requests payout.
-10. Admin approves or rejects payout.
-11. If approved, courier balance is debited internally.
-12. Important business actions are recorded in `audit_logs` for admin review and traceability.
+10. The system reserves the requested amount by moving it from available balance to reserved balance.
+11. Admin approves or rejects payout.
+12. If approved, the reserved amount is consumed and the payout is completed internally.
+13. If rejected, the reserved amount is released back to available balance.
+14. Important business actions are recorded in `audit_logs` for admin review and traceability.
 
 
 ## Multithreading and virtual threads
@@ -114,6 +117,51 @@ Example response:
 ```
 
 The scheduler logs also print the thread name and whether each task is running on a virtual thread.
+
+## Payout balance reservation workflow
+
+CourierPay uses a reserved-balance workflow to protect payout processing from double-spending and race-condition issues. When a courier requests a payout, the amount is not merely checked against the available balance. It is immediately reserved inside the same transaction.
+
+Example:
+
+```text
+Before payout request:
+availableAmount = 100.00
+reservedAmount = 0.00
+
+Courier requests payout of 80.00
+
+After payout request:
+availableAmount = 20.00
+reservedAmount = 80.00
+payout.status = REQUESTED
+```
+
+This prevents a courier from creating multiple pending payout requests against the same available money. For example, after requesting an 80.00 payout from a 100.00 balance, a second 80.00 request fails because only 20.00 remains available.
+
+Approval and rejection handle the reserved amount differently:
+
+```text
+Approve payout:
+reservedAmount -= payout.amount
+payout.status = COMPLETED
+transaction.type = PAYOUT_DEBIT
+
+Reject payout:
+reservedAmount -= payout.amount
+availableAmount += payout.amount
+payout.status = REJECTED
+```
+
+The implementation is centered in:
+
+```text
+src/main/java/com/alihasanov/courierpay/service/BalanceService.java
+src/main/java/com/alihasanov/courierpay/service/PayoutService.java
+src/main/java/com/alihasanov/courierpay/repository/PayoutRepository.java
+```
+
+`BalanceService` exposes `reserve(...)`, `consumeReserved(...)`, and `releaseReserved(...)`. These methods use the existing balance row lock from `findByCourierIdForUpdate(...)` so balance changes stay safe under concurrent requests. Payout approval and rejection also load the payout with a pessimistic lock through `PayoutRepository.findByIdForUpdate(...)`, so two admin actions cannot complete or reject the same payout at the same time.
 
 ## Security and access rules
 
@@ -393,8 +441,9 @@ Current test coverage includes:
 - **Full application wiring test:** `CourierPayApplicationTests` uses `@SpringBootTest` with the `test` profile to boot the full Spring context, verify controllers, services, repositories, security/JWT beans, ShedLock config, and the `/healthz` endpoint through `MockMvc`.
 - **MVC slice test:** `CompanyControllerTest` uses `@WebMvcTest` and `MockMvc` to verify company creation validation, JSON responses, filtering, pagination, and controller-to-service argument passing. Security collaborators are mocked so the controller layer can be tested without loading the full app.
 - **Repository slice tests:** `CompanyRepositoryTest` and `UserRepositoryTest` use `@DataJpaTest` with H2 in PostgreSQL compatibility mode and `ddl-auto=create-drop` to validate repository search, email lookup, and existence checks without requiring PostgreSQL in CI.
-- **Service unit tests:** `BalanceServiceTest` and `TransactionServiceTest` use JUnit 5 and Mockito to verify balance access checks, credit/debit behavior, insufficient-balance protection, and transaction persistence details.
+- **Service unit tests:** `BalanceServiceTest` and `TransactionServiceTest` use JUnit 5 and Mockito to verify balance access checks, credit/debit behavior, reserve/release/consume reserved-balance behavior, insufficient-balance protection, and transaction persistence details.
 - **Exception tests:** `ApplicationExceptionTest` verifies placeholder handling, localized message formatting, and fallback behavior when localization dependencies are missing.
+- **Payout workflow integration test:** `BalancePayoutWorkflowIntegrationTest` verifies that payout requests reserve available balance, approval consumes reserved funds, rejection releases reserved funds, and over-requested payouts are rejected.
 
 The test profile lives in `src/test/resources/application-test.yml`. It keeps tests self-contained by using an in-memory H2 database, disabling Liquibase, and disabling Kafka runtime behavior through `app.kafka.enabled=false`.
 
@@ -533,7 +582,7 @@ Content-Type: application/json
 }
 ```
 
-Couriers can only request payouts for their own `courierId`.
+Couriers can only request payouts for their own `courierId`. A successful payout request reserves the requested amount immediately: `availableAmount` decreases and `reservedAmount` increases while the payout remains in `REQUESTED` status.
 
 ### List payouts
 
@@ -550,6 +599,17 @@ Couriers only receive their own payouts. Admins and company managers keep broade
 POST /api/v1/payouts/1/approve
 Authorization: Bearer <access-token>
 ```
+
+Approving a payout consumes the reserved amount and records a `PAYOUT_DEBIT` transaction. The courier balance is not debited from `availableAmount` at this step because the money was already moved out of available balance when the payout was requested.
+
+### Reject payout
+
+```http
+POST /api/v1/payouts/1/reject
+Authorization: Bearer <access-token>
+```
+
+Rejecting a payout releases the reserved amount back to `availableAmount` and marks the payout as `REJECTED`.
 
 ### List audit logs
 
