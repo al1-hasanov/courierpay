@@ -22,6 +22,7 @@ import java.time.Instant;
 
 import static com.alihasanov.courierpay.dto.PayoutDtos.*;
 import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.ONLY_REQUESTED_PAYOUTS_CAN_BE_APPROVED;
+import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.ONLY_REQUESTED_PAYOUTS_CAN_BE_REJECTED;
 import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.PAYOUT_NOT_FOUND;
 import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.REQUESTED_PAYOUT_EXCEEDS_AVAILABLE_BALANCE;
 
@@ -47,8 +48,9 @@ public class PayoutService {
     public PayoutResponse request(RequestPayoutRequest request) {
         courierAccessService.assertCanAccessCourier(request.courierId());
         var courier = courierService.get(request.courierId());
-        var balance = balanceService.getByCourierId(courier.getId());
-        if (balance.getAvailableAmount().compareTo(request.amount()) < 0) {
+        try {
+            balanceService.reserve(courier.getId(), request.amount());
+        } catch (BusinessException exception) {
             throw new BusinessException(REQUESTED_PAYOUT_EXCEEDS_AVAILABLE_BALANCE);
         }
         var payout = payoutRepository.save(Payout.builder()
@@ -73,11 +75,11 @@ public class PayoutService {
 
     @Transactional
     public PayoutResponse approve(Long payoutId) {
-        var payout = get(payoutId);
+        var payout = getForUpdate(payoutId);
         if (payout.getStatus() != PayoutStatus.REQUESTED) {
             throw new BusinessException(ONLY_REQUESTED_PAYOUTS_CAN_BE_APPROVED);
         }
-        balanceService.debit(payout.getCourier().getId(), payout.getAmount());
+        balanceService.consumeReserved(payout.getCourier().getId(), payout.getAmount());
         transactionService.record(payout.getCourier(), TransactionType.PAYOUT_DEBIT, payout.getAmount(), payout.getId(), "Payout completed internally");
         payout.setStatus(PayoutStatus.COMPLETED);
         payout.setCompletedAt(Instant.now());
@@ -93,7 +95,11 @@ public class PayoutService {
 
     @Transactional
     public PayoutResponse reject(Long payoutId) {
-        var payout = get(payoutId);
+        var payout = getForUpdate(payoutId);
+        if (payout.getStatus() != PayoutStatus.REQUESTED) {
+            throw new BusinessException(ONLY_REQUESTED_PAYOUTS_CAN_BE_REJECTED);
+        }
+        balanceService.releaseReserved(payout.getCourier().getId(), payout.getAmount());
         payout.setStatus(PayoutStatus.REJECTED);
         auditLogService.success(
                 AuditAction.REJECTED_PAYOUT,
@@ -133,5 +139,7 @@ public class PayoutService {
         };
     }
 
-    private Payout get(Long id) { return payoutRepository.findById(id).orElseThrow(() -> new NotFoundException(PAYOUT_NOT_FOUND)); }
+    private Payout getForUpdate(Long id) {
+        return payoutRepository.findByIdForUpdate(id).orElseThrow(() -> new NotFoundException(PAYOUT_NOT_FOUND));
+    }
 }

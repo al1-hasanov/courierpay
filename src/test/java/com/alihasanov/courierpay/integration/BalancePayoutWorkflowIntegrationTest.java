@@ -170,8 +170,9 @@ class BalancePayoutWorkflowIntegrationTest {
         ));
 
         assertThat(requestedPayout.status()).isEqualTo(PayoutStatus.REQUESTED);
-        assertThat(balanceRepository.findByCourierId(fixture.courierId()).orElseThrow().getAvailableAmount())
-                .isEqualByComparingTo("180.00");
+        var balanceAfterRequest = balanceRepository.findByCourierId(fixture.courierId()).orElseThrow();
+        assertThat(balanceAfterRequest.getAvailableAmount()).isEqualByComparingTo("100.00");
+        assertThat(balanceAfterRequest.getReservedAmount()).isEqualByComparingTo("80.00");
 
         var completedPayout = payoutService.approve(requestedPayout.id());
 
@@ -187,6 +188,34 @@ class BalancePayoutWorkflowIntegrationTest {
                 fixture.courierId(),
                 BigDecimal.valueOf(101.00)
         ))).isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void payoutReject_shouldReleaseReservedAmountBackToAvailableBalance() {
+        var fixture = createCourierFixture("payout-reject-workflow");
+        var earning = earningService.create(new CreateEarningRequest(
+                fixture.courierId(),
+                BigDecimal.valueOf(100.00),
+                LocalDate.now(),
+                "earning-" + UUID.randomUUID()
+        ));
+        earningService.process(earning.id());
+
+        var requestedPayout = payoutService.request(new RequestPayoutRequest(
+                fixture.courierId(),
+                BigDecimal.valueOf(50.00)
+        ));
+
+        var balanceAfterRequest = balanceRepository.findByCourierId(fixture.courierId()).orElseThrow();
+        assertThat(balanceAfterRequest.getAvailableAmount()).isEqualByComparingTo("40.00");
+        assertThat(balanceAfterRequest.getReservedAmount()).isEqualByComparingTo("50.00");
+
+        var rejectedPayout = payoutService.reject(requestedPayout.id());
+
+        var balanceAfterReject = balanceRepository.findByCourierId(fixture.courierId()).orElseThrow();
+        assertThat(rejectedPayout.status()).isEqualTo(PayoutStatus.REJECTED);
+        assertThat(balanceAfterReject.getAvailableAmount()).isEqualByComparingTo("90.00");
+        assertThat(balanceAfterReject.getReservedAmount()).isEqualByComparingTo("0.00");
     }
 
     private CourierFixture createCourierFixture(String label) {

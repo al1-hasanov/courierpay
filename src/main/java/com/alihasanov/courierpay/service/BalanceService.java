@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.BALANCE_NOT_FOUND;
 import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.INSUFFICIENT_AVAILABLE_BALANCE;
+import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.INSUFFICIENT_RESERVED_BALANCE;
 
 @Service
 @RequiredArgsConstructor
@@ -33,19 +34,55 @@ public class BalanceService {
     }
 
     public Balance credit(Long courierId, BigDecimal amount) {
-        var balance = balanceRepository.findByCourierIdForUpdate(courierId)
-                .orElseThrow(() -> new NotFoundException(BALANCE_NOT_FOUND));
+        var balance = getByCourierIdForUpdate(courierId);
         balance.setAvailableAmount(balance.getAvailableAmount().add(amount));
         return balance;
     }
 
     public Balance debit(Long courierId, BigDecimal amount) {
-        var balance = balanceRepository.findByCourierIdForUpdate(courierId)
+        var balance = getByCourierIdForUpdate(courierId);
+        assertAvailableAmount(balance, amount);
+        balance.setAvailableAmount(balance.getAvailableAmount().subtract(amount));
+        return balance;
+    }
+
+    public Balance reserve(Long courierId, BigDecimal amount) {
+        var balance = getByCourierIdForUpdate(courierId);
+        assertAvailableAmount(balance, amount);
+        balance.setAvailableAmount(balance.getAvailableAmount().subtract(amount));
+        balance.setReservedAmount(balance.getReservedAmount().add(amount));
+        return balance;
+    }
+
+    public Balance releaseReserved(Long courierId, BigDecimal amount) {
+        var balance = getByCourierIdForUpdate(courierId);
+        assertReservedAmount(balance, amount);
+        balance.setReservedAmount(balance.getReservedAmount().subtract(amount));
+        balance.setAvailableAmount(balance.getAvailableAmount().add(amount));
+        return balance;
+    }
+
+    public Balance consumeReserved(Long courierId, BigDecimal amount) {
+        var balance = getByCourierIdForUpdate(courierId);
+        assertReservedAmount(balance, amount);
+        balance.setReservedAmount(balance.getReservedAmount().subtract(amount));
+        return balance;
+    }
+
+    private Balance getByCourierIdForUpdate(Long courierId) {
+        return balanceRepository.findByCourierIdForUpdate(courierId)
                 .orElseThrow(() -> new NotFoundException(BALANCE_NOT_FOUND));
+    }
+
+    private void assertAvailableAmount(Balance balance, BigDecimal amount) {
         if (balance.getAvailableAmount().compareTo(amount) < 0) {
             throw new BusinessException(INSUFFICIENT_AVAILABLE_BALANCE);
         }
-        balance.setAvailableAmount(balance.getAvailableAmount().subtract(amount));
-        return balance;
+    }
+
+    private void assertReservedAmount(Balance balance, BigDecimal amount) {
+        if (balance.getReservedAmount().compareTo(amount) < 0) {
+            throw new BusinessException(INSUFFICIENT_RESERVED_BALANCE);
+        }
     }
 }

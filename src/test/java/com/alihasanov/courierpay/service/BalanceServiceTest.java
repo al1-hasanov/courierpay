@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.INSUFFICIENT_AVAILABLE_BALANCE;
+import static com.alihasanov.courierpay.exception.CourierPayErrorResponse.INSUFFICIENT_RESERVED_BALANCE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
@@ -71,5 +72,81 @@ class BalanceServiceTest {
                 .isEqualTo(INSUFFICIENT_AVAILABLE_BALANCE);
 
         assertThat(balance.getAvailableAmount()).isEqualByComparingTo("10.00");
+    }
+
+    @Test
+    void reserve_shouldMoveAmountFromAvailableToReserved() {
+        var balance = Balance.builder()
+                .availableAmount(new BigDecimal("100.00"))
+                .reservedAmount(new BigDecimal("20.00"))
+                .build();
+        when(balanceRepository.findByCourierIdForUpdate(7L)).thenReturn(Optional.of(balance));
+
+        Balance result = balanceService.reserve(7L, new BigDecimal("30.00"));
+
+        assertThat(result.getAvailableAmount()).isEqualByComparingTo("70.00");
+        assertThat(result.getReservedAmount()).isEqualByComparingTo("50.00");
+    }
+
+    @Test
+    void reserve_shouldRejectAmountGreaterThanAvailableBalance() {
+        var balance = Balance.builder()
+                .availableAmount(new BigDecimal("10.00"))
+                .reservedAmount(BigDecimal.ZERO)
+                .build();
+        when(balanceRepository.findByCourierIdForUpdate(7L)).thenReturn(Optional.of(balance));
+
+        assertThatThrownBy(() -> balanceService.reserve(7L, new BigDecimal("10.01")))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorResponse")
+                .isEqualTo(INSUFFICIENT_AVAILABLE_BALANCE);
+
+        assertThat(balance.getAvailableAmount()).isEqualByComparingTo("10.00");
+        assertThat(balance.getReservedAmount()).isEqualByComparingTo("0.00");
+    }
+
+    @Test
+    void releaseReserved_shouldMoveAmountFromReservedBackToAvailable() {
+        var balance = Balance.builder()
+                .availableAmount(new BigDecimal("70.00"))
+                .reservedAmount(new BigDecimal("30.00"))
+                .build();
+        when(balanceRepository.findByCourierIdForUpdate(7L)).thenReturn(Optional.of(balance));
+
+        Balance result = balanceService.releaseReserved(7L, new BigDecimal("10.00"));
+
+        assertThat(result.getAvailableAmount()).isEqualByComparingTo("80.00");
+        assertThat(result.getReservedAmount()).isEqualByComparingTo("20.00");
+    }
+
+    @Test
+    void consumeReserved_shouldDecreaseOnlyReservedAmount() {
+        var balance = Balance.builder()
+                .availableAmount(new BigDecimal("70.00"))
+                .reservedAmount(new BigDecimal("30.00"))
+                .build();
+        when(balanceRepository.findByCourierIdForUpdate(7L)).thenReturn(Optional.of(balance));
+
+        Balance result = balanceService.consumeReserved(7L, new BigDecimal("15.00"));
+
+        assertThat(result.getAvailableAmount()).isEqualByComparingTo("70.00");
+        assertThat(result.getReservedAmount()).isEqualByComparingTo("15.00");
+    }
+
+    @Test
+    void consumeReserved_shouldRejectAmountGreaterThanReservedBalance() {
+        var balance = Balance.builder()
+                .availableAmount(new BigDecimal("70.00"))
+                .reservedAmount(new BigDecimal("5.00"))
+                .build();
+        when(balanceRepository.findByCourierIdForUpdate(7L)).thenReturn(Optional.of(balance));
+
+        assertThatThrownBy(() -> balanceService.consumeReserved(7L, new BigDecimal("5.01")))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorResponse")
+                .isEqualTo(INSUFFICIENT_RESERVED_BALANCE);
+
+        assertThat(balance.getAvailableAmount()).isEqualByComparingTo("70.00");
+        assertThat(balance.getReservedAmount()).isEqualByComparingTo("5.00");
     }
 }
